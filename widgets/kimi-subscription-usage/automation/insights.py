@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 
 MAX_POINTS = 500      # 历史点上限（4 小时一次 ≈ 83 天）
 KEEP_DAYS = 30        # 超过这个天数的点丢弃
-MIN_SPAN_DAYS = 0.2   # 两点间隔太短算不准日均，直接放弃
+MIN_SPAN_DAYS = 0.1   # 两点间隔太短算不准日均就放弃（0.1 天 = 2.4h，容得下 4h 一次的刷新）
 RECHARGE_JUMP = 1.02  # 值上涨超过 2% 视为充值/重置，之前的历史不再参与斜率
 
 DEFAULTS = {
@@ -78,13 +78,15 @@ def money(value, digits: int = 2) -> str:
 
 
 def day_text(days) -> str:
-    """把剩余天数渲染成人话。"""
+    """把剩余天数渲染成人话（超过 999 天一律显示 999+，避免荒谬数字）。"""
     if days is None:
         return "算不出速率"
     if days <= 0:
         return "已用尽"
     if days < 1:
         return "不到 1 天"
+    if days > 999:
+        return "999+ 天"
     return "%d 天" % int(round(days))
 
 

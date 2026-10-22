@@ -94,7 +94,7 @@
     if (!d || d.ok === false) return '';
     var parts = [];
     if (d.burnPerDay) parts.push('日均 <b>' + fmtRate(d.burnPerDay) + '</b>');
-    if (d.daysLeft != null) parts.push('还能撑 <b>' + Math.max(0, Math.round(d.daysLeft)) + ' 天</b>');
+    if (d.daysLeft != null) parts.push('还能撑 <b>' + (d.daysLeft > 999 ? '999+' : Math.max(0, Math.round(d.daysLeft))) + ' 天</b>');
     if (d.exhaustAt) parts.push('约 ' + md(d.exhaustAt) + ' 用完');
     if (!d.burnPerDay) parts.push(d.samples > 1 ? '近 ' + (d.windowDays || 7) + ' 天没消耗' : '攒历史中，下次刷新出结论');
     if ((d.level || 'ok') === 'alert') parts.unshift('⚠️');
