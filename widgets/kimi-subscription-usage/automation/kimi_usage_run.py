@@ -7,12 +7,58 @@
 """
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+
+import insights
+
 BASE = "https://www.kimi.com"
 ASSETS = os.path.dirname(os.path.abspath(__file__))
+
+
+def derived(remaining_pct, reset_at, assets_dir):
+    """订阅额度的记账/外推：剩余百分比 → 日均消耗几个点 → 还能撑几天 → 是否会在重置前打光。"""
+    th = insights.load_thresholds(assets_dir)
+    points = insights.record_value(os.path.join(assets_dir, "history.json"), remaining_pct)
+    rate = insights.rate_per_day(points, th["windowDays"])
+    days, exhaust_at = insights.project(remaining_pct, rate)
+    reset_days = insights.days_between(insights.now_utc(), reset_at)
+    reset_days = reset_days if reset_days > 0 else None
+
+    level = insights.level_for_ratio(remaining_pct, th["quotaWarnPct"], th["quotaAlertPct"])
+    if days is not None and reset_days is not None and days < reset_days:
+        level = insights.worst(level, "alert")
+
+    if rate:
+        base = "日均消耗 %.1f 个百分点" % rate
+        if days is None:
+            hint = base + "，还在攒样本"
+        elif days <= 0:
+            hint = "额度已打光"
+        elif reset_days is not None and days < reset_days:
+            hint = "%s，约 %s 打光 —— 距重置还有 %d 天，撑不到重置" % (
+                base, insights.date_label(exhaust_at), int(round(reset_days)))
+        else:
+            hint = "%s，还能撑 %s（约 %s）" % (base, insights.day_text(days), insights.date_label(exhaust_at))
+    else:
+        hint = "近 %d 天没有观测到消耗" % int(th["windowDays"])
+
+    return {
+        "level": level,
+        "burnPerDay": (round(rate, 3) if rate else None),
+        "daysLeft": (round(days, 2) if days is not None else None),
+        "daysToReset": (int(round(reset_days)) if reset_days is not None else None),
+        "exhaustAt": exhaust_at,
+        "windowDays": int(th["windowDays"]),
+        "samples": len(points),
+        "hint": hint,
+    }
 
 
 def post_rpc(path, token):
@@ -93,19 +139,20 @@ def run(ctx):
     subscription = sub.get("subscription") or {}
     goods = subscription.get("goods") or {}
 
-    return {
-        "artifact": {
-            "ok": True,
-            "active": bool(subscription.get("active", True)),
-            "plan": goods.get("title", ""),
-            "totalPct": round(ratio, 1),
-            "remainingPct": round(100 - ratio, 1),
-            "codePct": round(code_ratio, 1),
-            "resetAt": bal.get("expireTime", ""),
-            "subEnd": subscription.get("currentEndTime", ""),
-            "boostLeft": boost_left,
-            "boostTotal": boost_total,
-            "boostMonthlyUsed": boost_used,
-            "updatedAt": datetime.now(timezone.utc).isoformat(),
-        }
+    remaining_pct = round(100 - ratio, 1)
+    artifact = {
+        "ok": True,
+        "active": bool(subscription.get("active", True)),
+        "plan": goods.get("title", ""),
+        "totalPct": round(ratio, 1),
+        "remainingPct": remaining_pct,
+        "codePct": round(code_ratio, 1),
+        "resetAt": bal.get("expireTime", ""),
+        "subEnd": subscription.get("currentEndTime", ""),
+        "boostLeft": boost_left,
+        "boostTotal": boost_total,
+        "boostMonthlyUsed": boost_used,
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
     }
+    artifact.update(derived(remaining_pct, artifact["resetAt"], ASSETS))
+    return {"artifact": artifact}

@@ -6,3 +6,7 @@ volc_cookies.json
 .env
 __pycache__/
 .DS_Store
+
+# 运行时产物：历史点与阈值覆盖（由脚本自己写，不进仓库）
+widgets/*/automation/history.json
+widgets/*/automation/thresholds.json

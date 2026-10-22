@@ -5,12 +5,50 @@
 """
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+
+import insights
+
 API = "https://api.deepseek.com/user/balance"
 ASSETS = os.path.dirname(os.path.abspath(__file__))
+
+
+def build_hint(rate, days, exhaust_at, level, window_days):
+    """一句话结论。JSON 里也带一份，方便脚本日志和将来的通知渠道复用。"""
+    prefix = "余额告急：" if level == "alert" else ("余额偏低：" if level == "warn" else "")
+    if not rate:
+        return prefix + "近 %d 天没有观测到消耗" % window_days
+    if days is None:
+        return prefix + "样本不足，还算不出用完日期"
+    if days <= 0:
+        return prefix + "已经用完了"
+    return prefix + "日均 %s · 还能撑 %s（约 %s 用完）" % (
+        insights.money(rate), insights.day_text(days), insights.date_label(exhaust_at))
+
+
+def derived(total, assets_dir):
+    """记账 → 日均消耗 → 剩余天数 → 告警级别。返回可直接并进 artifact 的字段。"""
+    th = insights.load_thresholds(assets_dir)
+    points = insights.record_value(os.path.join(assets_dir, "history.json"), total)
+    rate = insights.rate_per_day(points, th["windowDays"])
+    days, exhaust_at = insights.project(total, rate)
+    level = insights.level_for_money(total, th["balanceWarn"], th["balanceAlert"])
+    return {
+        "level": level,
+        "burnPerDay": (round(rate, 4) if rate else None),
+        "daysLeft": (round(days, 2) if days is not None else None),
+        "exhaustAt": exhaust_at,
+        "windowDays": int(th["windowDays"]),
+        "samples": len(points),
+        "hint": build_hint(rate, days, exhaust_at, level, th["windowDays"]),
+    }
 
 
 def run(ctx):
@@ -38,14 +76,15 @@ def run(ctx):
         return {"artifact": {"ok": False, "error": "api", "detail": "余额接口返回为空", "updatedAt": ""}}
 
     info = infos[0]
-    return {
-        "artifact": {
-            "ok": True,
-            "available": bool(d.get("is_available")),
-            "currency": info.get("currency", ""),
-            "total": float(info.get("total_balance", 0) or 0),
-            "granted": float(info.get("granted_balance", 0) or 0),
-            "toppedUp": float(info.get("topped_up_balance", 0) or 0),
-            "updatedAt": datetime.now(timezone.utc).isoformat(),
-        }
+    total = float(info.get("total_balance", 0) or 0)
+    artifact = {
+        "ok": True,
+        "available": bool(d.get("is_available")),
+        "currency": info.get("currency", ""),
+        "total": total,
+        "granted": float(info.get("granted_balance", 0) or 0),
+        "toppedUp": float(info.get("topped_up_balance", 0) or 0),
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
     }
+    artifact.update(derived(total, ASSETS))
+    return {"artifact": artifact}

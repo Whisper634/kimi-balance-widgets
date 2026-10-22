@@ -82,9 +82,83 @@
                       "number",
                       "null"
                     ]
+                  },
+                  "remainingPct": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "valueOut": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "valueIn": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "priority": {
+                    "type": "number"
                   }
                 }
               }
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "warn",
+                "alert"
+              ]
+            },
+            "hint": {
+              "type": "string"
+            },
+            "burnPerDay": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "daysLeft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "exhaustAt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "windowDays": {
+              "type": "number"
+            },
+            "samples": {
+              "type": "number"
+            },
+            "totalValueOut": {
+              "type": "number"
+            },
+            "totalValueIn": {
+              "type": "number"
+            },
+            "remainAll": {
+              "type": "number"
+            },
+            "tokensAll": {
+              "type": "number"
+            },
+            "priorityName": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }

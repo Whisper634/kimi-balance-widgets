@@ -42,6 +42,11 @@
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
   .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
   .empty { font-size: 14px; color: var(--kimi-color-text-tertiary); padding-block: var(--kimi-space-4); text-align: center; }
+  .insight { margin-block-start: var(--kimi-space-3); padding: var(--kimi-space-2) var(--kimi-space-3); border-radius: var(--kimi-radius-panel); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 10%, transparent); font-size: 12.5px; line-height: 1.45; color: var(--kimi-color-text-secondary); }
+  .insight b { font-weight: 500; }
+  .insight.warn { background: color-mix(in srgb, var(--kimi-color-warning) 14%, transparent); color: var(--kimi-color-warning); }
+  .insight.alert { background: color-mix(in srgb, var(--kimi-color-danger) 14%, transparent); color: var(--kimi-color-danger); }
+  .chip.prio { color: var(--kimi-color-positive); background: color-mix(in srgb, var(--kimi-color-positive) 14%, transparent); }
 </style>
 </head>
 <body>
@@ -52,6 +57,7 @@
   </div>
   <div class="summary" id="summary">正在读取额度数据…</div>
   <div id="list"></div>
+  <div id="insight"></div>
 </div>
 
 <script>
@@ -101,6 +107,7 @@
     var totalAll = 0, remainAll = 0;
     opened.forEach(function (m) { totalAll += m.total || 0; remainAll += m.remaining || 0; });
     summary.textContent = opened.length + ' 个已开通 · 合计剩余 ' + fmt(remainAll) + ' / ' + fmt(totalAll) + ' tokens' +
+      (data.totalValueOut != null ? ' · 值 ≈ ¥' + Number(data.totalValueOut).toFixed(2) : '') +
       (closed.length ? ' · 另有 ' + closed.length + ' 个未开通（各送 ' + fmt(closed[0].total || 0) + '）' : '');
 
     var html = opened.map(rowHtml).join('');
@@ -119,10 +126,12 @@
       subs.push('已用 ' + fmt(m.consumed));
       if (m.priceIn != null) subs.push('输入 ' + fmtPrice(m.priceIn));
       if (m.priceOut != null) subs.push('输出 ' + fmtPrice(m.priceOut));
+      if (m.valueOut != null) subs.push('值 ¥' + Number(m.valueOut).toFixed(2));
       return '<div class="row">' +
         '<div class="top"><span class="name">' + escapeHtml(m.display || m.name) + '</span>' +
         '<span class="vendor">' + escapeHtml(m.vendor || '') + '</span>' +
-        '<span class="chip ' + (m.opened ? 'on' : 'off') + '">' + (m.opened ? '已开通' : '未开通') + '</span></div>' +
+        '<span class="chip ' + (m.opened ? 'on' : 'off') + '">' + (m.opened ? '已开通' : '未开通') + '</span>' +
+        (m.opened && m.priority === 1 ? '<span class="chip prio">先用</span>' : '') + '</div>' +
         '<div class="mid"><span class="remain num">' + fmt(m.remaining) + '</span>' +
         '<span class="unit">/ ' + fmt(m.total) + ' tokens</span>' +
         '<span class="pct num ' + cls + '">' + pct.toFixed(1) + '%</span></div>' +
@@ -136,6 +145,19 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+
+  function insightHtml(d) {
+    if (!d || d.ok === false || !d.hint) return '';
+    return '<div class="insight ' + (d.level || 'ok') + '">' +
+      ((d.level || 'ok') === 'alert' ? '⚠️ ' : '') + escapeHtml(d.hint) + '</div>';
+  }
+
+  var _render = render;
+  render = function (d) {
+    _render(d);
+    var box = document.getElementById('insight');
+    if (box) box.innerHTML = insightHtml(d);
+  };
 
   var W = window.DaimonWidget;
   if (W && typeof W.onDataChange === 'function') {

@@ -30,6 +30,10 @@
   .err .t { font-size: 15px; font-weight: 500; margin-block-end: var(--kimi-space-1); display: flex; align-items: center; gap: var(--kimi-space-2); }
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
   .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
+  .insight { margin-block-start: var(--kimi-space-3); padding: var(--kimi-space-2) var(--kimi-space-3); border-radius: var(--kimi-radius-panel); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 10%, transparent); font-size: 12.5px; line-height: 1.45; color: var(--kimi-color-text-secondary); }
+  .insight b { font-weight: 500; }
+  .insight.warn { background: color-mix(in srgb, var(--kimi-color-warning) 14%, transparent); color: var(--kimi-color-warning); }
+  .insight.alert { background: color-mix(in srgb, var(--kimi-color-danger) 14%, transparent); color: var(--kimi-color-danger); }
 </style>
 </head>
 <body>
@@ -39,6 +43,7 @@
     <span class="status ok" id="status">可用</span>
   </div>
   <div id="body">正在读取余额…</div>
+  <div id="insight"></div>
 </div>
 
 <script>
@@ -74,6 +79,34 @@
       '<div class="item"><div class="k">赠送余额</div><div class="v num">' + fmt(d.granted) + '</div></div>' +
       '</div>';
   }
+
+  function fmtRate(n) {
+    if (n == null) return '—';
+    return '¥' + Number(n).toFixed(Math.abs(n) < 1 ? 3 : 2);
+  }
+  function md(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return (d.getMonth() + 1) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function insightHtml(d) {
+    if (!d || d.ok === false) return '';
+    var parts = [];
+    if (d.burnPerDay) parts.push('日均 <b>' + fmtRate(d.burnPerDay) + '</b>');
+    if (d.daysLeft != null) parts.push('还能撑 <b>' + Math.max(0, Math.round(d.daysLeft)) + ' 天</b>');
+    if (d.exhaustAt) parts.push('约 ' + md(d.exhaustAt) + ' 用完');
+    if (!d.burnPerDay) parts.push(d.samples > 1 ? '近 ' + (d.windowDays || 7) + ' 天没消耗' : '攒历史中，下次刷新出结论');
+    if ((d.level || 'ok') === 'alert') parts.unshift('⚠️');
+    return '<div class="insight ' + (d.level || 'ok') + '">' + parts.join(' · ') + '</div>';
+  }
+
+  var _render = render;
+  render = function (d) {
+    _render(d);
+    var box = document.getElementById('insight');
+    if (box) box.innerHTML = insightHtml(d);
+  };
 
   var W = window.DaimonWidget;
   var current = (W && W.data && W.data.main) || SAMPLE;

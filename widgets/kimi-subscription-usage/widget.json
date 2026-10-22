@@ -54,6 +54,47 @@
             },
             "updatedAt": {
               "type": "string"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "warn",
+                "alert"
+              ]
+            },
+            "hint": {
+              "type": "string"
+            },
+            "burnPerDay": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "daysLeft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "exhaustAt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "windowDays": {
+              "type": "number"
+            },
+            "samples": {
+              "type": "number"
+            },
+            "daysToReset": {
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [

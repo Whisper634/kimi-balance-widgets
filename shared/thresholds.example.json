@@ -1,0 +1,8 @@
+{
+  "balanceWarn": 20.0,
+  "balanceAlert": 10.0,
+  "quotaWarnPct": 20.0,
+  "quotaAlertPct": 10.0,
+  "tokensWarn": 100000,
+  "windowDays": 7
+}
