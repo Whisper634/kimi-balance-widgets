@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "widget": {
+    "widgetId": "widget_ebf942ac-afee-4ac7-bf15-40efe47025d0",
+    "title": "Kimi 订阅用量",
+    "description": "Kimi（Allegretto）订阅的 coding 用量看板：总使用量百分比、重置时间、额度加油包余额。",
+    "kind": "regular",
+    "capabilities": [],
+    "type": "html",
+    "faces": {},
+    "slots": {
+      "main": {
+        "kind": "json",
+        "schema": {
+          "properties": {
+            "active": {
+              "type": "boolean"
+            },
+            "boostLeft": {
+              "type": "number"
+            },
+            "boostMonthlyUsed": {
+              "type": "number"
+            },
+            "boostTotal": {
+              "type": "number"
+            },
+            "codePct": {
+              "type": "number"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "ok": {
+              "type": "boolean"
+            },
+            "plan": {
+              "type": "string"
+            },
+            "remainingPct": {
+              "type": "number"
+            },
+            "resetAt": {
+              "type": "string"
+            },
+            "subEnd": {
+              "type": "string"
+            },
+            "totalPct": {
+              "type": "number"
+            },
+            "updatedAt": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "latestData": {
+      "main": {
+        "ok": true,
+        "active": true,
+        "plan": "Allegretto",
+        "totalPct": 42.5,
+        "remainingPct": 57.5,
+        "codePct": 0,
+        "resetAt": "2026-11-17T09:10:55Z",
+        "subEnd": "2027-07-18T00:00:00Z",
+        "boostLeft": 0,
+        "boostTotal": 175,
+        "boostMonthlyUsed": 0,
+        "updatedAt": "2026-10-22T02:24:03.508639+00:00"
+      }
+    },
+    "status": "idle",
+    "lastRun": {
+      "runId": "run_840b150f-6fac-455c-8180-b78df662ae5c",
+      "status": "succeeded",
+      "startedAt": "2026-10-22T02:24:02.628Z",
+      "completedAt": "2026-10-22T02:24:03.536Z"
+    },
+    "bindings": {
+      "main": "binding_5f037e04-8230-42a4-8ad9-f75a48c749d1"
+    },
+    "createdAt": "2026-10-22T02:21:59.757Z",
+    "updatedAt": "2026-10-22T02:24:03.552Z"
+  }
+}

@@ -1,0 +1,111 @@
+"""Kimi 订阅（Allegretto）coding 用量查询（Blueprint Python Automation 入口）。
+
+凭据：与本文件同目录的 kimi_refresh.txt（kimi.com refresh_token，长效）。
+流程：refresh_token -> GET /api/auth/token/refresh 换 access_token（约 30 天有效）
+      -> Connect-RPC 调用会员网关 GetSubscriptionStats / GetSubscription。
+返回：{"artifact": {...}}，结构对齐「Kimi 订阅用量」小组件的 slots.main。
+"""
+import json
+import os
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+
+BASE = "https://www.kimi.com"
+ASSETS = os.path.dirname(os.path.abspath(__file__))
+
+
+def post_rpc(path, token):
+    req = urllib.request.Request(
+        BASE + path,
+        data=b"{}",
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Connect-Protocol-Version": "1",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read())
+
+
+def fail(kind, detail):
+    return {"artifact": {"ok": False, "error": kind, "detail": detail, "updatedAt": ""}}
+
+
+def run(ctx):
+    try:
+        with open(os.path.join(ASSETS, "kimi_refresh.txt")) as f:
+            refresh = f.read().strip()
+        if not refresh:
+            raise ValueError("empty refresh token")
+    except Exception as e:
+        return fail("auth", f"凭据文件缺失或损坏: {e}")
+
+    # 1) 用 refresh_token 换 access_token（该端点是 GET + Bearer）
+    req = urllib.request.Request(
+        BASE + "/api/auth/token/refresh",
+        headers={"Authorization": f"Bearer {refresh}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            tokens = json.loads(r.read())
+        access = tokens.get("access_token", "")
+        if not access:
+            raise ValueError("no access_token in refresh response")
+        # 轮换持久化 refresh_token（每次刷新都会签发新的）
+        new_refresh = tokens.get("refresh_token")
+        if new_refresh:
+            with open(os.path.join(ASSETS, "kimi_refresh.txt"), "w") as f:
+                f.write(new_refresh.strip() + "\n")
+    except urllib.error.HTTPError as e:
+        return fail("auth", f"刷新令牌失败 HTTP {e.code}: {e.read().decode()[:200]}")
+    except Exception as e:
+        return fail("network", f"刷新令牌失败: {str(e)[:200]}")
+
+    # 2) 调用量接口
+    try:
+        stats = post_rpc("/apiv2/kimi.gateway.membership.v2.MembershipService/GetSubscriptionStats", access)
+    except urllib.error.HTTPError as e:
+        return fail("api", f"用量接口 HTTP {e.code}: {e.read().decode()[:200]}")
+    except Exception as e:
+        return fail("network", f"用量接口失败: {str(e)[:200]}")
+
+    sub = {}
+    try:
+        sub = post_rpc("/apiv2/kimi.gateway.membership.v2.MembershipService/GetSubscription", access)
+    except Exception:
+        pass
+
+    bal = stats.get("subscriptionBalance") or {}
+    ratio = float(bal.get("amountUsedRatio", 0) or 0) * 100
+    code_ratio = float(bal.get("kimiCodeUsedRatio", 0) or 0) * 100
+
+    boost_left = boost_total = boost_used = None
+    wallets = stats.get("boosterWallets") or []
+    if wallets:
+        w = wallets[0]
+        boost_left = int((w.get("moneyLeft") or {}).get("priceInCents", 0)) / 100
+        boost_total = int((w.get("moneyTotal") or {}).get("priceInCents", 0)) / 100
+        boost_used = int((w.get("monthlyUsed") or {}).get("priceInCents", 0)) / 100
+
+    subscription = sub.get("subscription") or {}
+    goods = subscription.get("goods") or {}
+
+    return {
+        "artifact": {
+            "ok": True,
+            "active": bool(subscription.get("active", True)),
+            "plan": goods.get("title", ""),
+            "totalPct": round(ratio, 1),
+            "remainingPct": round(100 - ratio, 1),
+            "codePct": round(code_ratio, 1),
+            "resetAt": bal.get("expireTime", ""),
+            "subEnd": subscription.get("currentEndTime", ""),
+            "boostLeft": boost_left,
+            "boostTotal": boost_total,
+            "boostMonthlyUsed": boost_used,
+            "updatedAt": datetime.now(timezone.utc).isoformat(),
+        }
+    }

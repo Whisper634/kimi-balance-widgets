@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "widget": {
+    "widgetId": "widget_c04162e1-d41c-4740-b0f9-92f12c2c2c62",
+    "title": "DeepSeek API 余额",
+    "description": "DeepSeek API 账户余额看板：总额、赠金/充值金构成和账户可用状态。",
+    "kind": "regular",
+    "capabilities": [],
+    "type": "html",
+    "faces": {},
+    "slots": {
+      "main": {
+        "kind": "json",
+        "schema": {
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "granted": {
+              "type": "number"
+            },
+            "ok": {
+              "type": "boolean"
+            },
+            "toppedUp": {
+              "type": "number"
+            },
+            "total": {
+              "type": "number"
+            },
+            "updatedAt": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "latestData": {
+      "main": {
+        "ok": true,
+        "available": true,
+        "currency": "CNY",
+        "total": 96.5,
+        "granted": 0,
+        "toppedUp": 96.5,
+        "updatedAt": "2026-10-22T01:37:18.035751+00:00"
+      }
+    },
+    "status": "idle",
+    "lastRun": {
+      "runId": "run_0b158dac-81b5-442e-9b9e-e78af20fd8d0",
+      "status": "succeeded",
+      "startedAt": "2026-10-22T01:37:17.725Z",
+      "completedAt": "2026-10-22T01:37:18.057Z"
+    },
+    "bindings": {
+      "main": "binding_d97545e4-c41d-4dde-a7de-be4c2119e31d"
+    },
+    "createdAt": "2026-10-22T01:35:55.183Z",
+    "updatedAt": "2026-10-22T01:37:18.066Z"
+  }
+}

@@ -1,0 +1,8 @@
+# API Keys / session credentials — never commit
+*_key.txt
+kimi_refresh.txt
+volc_cookies.json
+*.cookies.json
+.env
+__pycache__/
+.DS_Store

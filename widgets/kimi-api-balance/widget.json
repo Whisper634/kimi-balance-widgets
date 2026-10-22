@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "widget": {
+    "widgetId": "widget_29479f7d-d819-4daf-8bb8-f62b534d93b8",
+    "title": "Kimi API 余额",
+    "description": "Kimi（Moonshot 开放平台）API 账户余额看板：可用总额、现金/代金券（加油包）构成及百分比。",
+    "kind": "regular",
+    "capabilities": [],
+    "type": "html",
+    "faces": {},
+    "slots": {
+      "main": {
+        "kind": "json",
+        "schema": {
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "cash": {
+              "type": "number"
+            },
+            "cashPct": {
+              "type": "number"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "ok": {
+              "type": "boolean"
+            },
+            "total": {
+              "type": "number"
+            },
+            "updatedAt": {
+              "type": "string"
+            },
+            "voucher": {
+              "type": "number"
+            },
+            "voucherPct": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "latestData": {
+      "main": {
+        "ok": true,
+        "available": true,
+        "currency": "CNY",
+        "total": 60.94335,
+        "cash": 47.97166,
+        "voucher": 12.97169,
+        "cashPct": 78.7,
+        "voucherPct": 21.3,
+        "updatedAt": "2026-10-22T01:56:05.016155+00:00"
+      }
+    },
+    "status": "idle",
+    "lastRun": {
+      "runId": "run_26fbc8f3-68ea-4923-8db5-e9ff94c30cd9",
+      "status": "succeeded",
+      "startedAt": "2026-10-22T01:55:59.746Z",
+      "completedAt": "2026-10-22T01:56:05.039Z"
+    },
+    "bindings": {
+      "main": "binding_bc3817b2-de88-4124-b848-80b158b150d8"
+    },
+    "createdAt": "2026-10-22T01:49:30.286Z",
+    "updatedAt": "2026-10-22T01:56:05.055Z"
+  }
+}

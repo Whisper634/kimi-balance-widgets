@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>火山方舟模型额度</title>
+<style>
+  :root { font-family: var(--kimi-font-sans); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  button, input, select, textarea { font: inherit; }
+  svg text { font-family: var(--kimi-font-sans); }
+  .wrap { padding-block-start: var(--kimi-space-4); padding-inline: var(--kimi-space-4); padding-block-end: var(--kimi-space-4); width: 100%; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--kimi-space-3); margin-block-end: var(--kimi-space-1); }
+  .head h1 { font-size: 17px; font-weight: 500; }
+  .head .meta { font-size: 12px; color: var(--kimi-color-text-tertiary); }
+  .summary { font-size: 14px; color: var(--kimi-color-text-secondary); margin-block-end: var(--kimi-space-3); }
+
+  .row { padding-block: var(--kimi-space-3); border-block-start: 0.5px solid var(--kimi-color-border); }
+  .row:first-of-type { border-block-start: none; }
+  .top { display: flex; align-items: center; gap: var(--kimi-space-2); margin-block-end: var(--kimi-space-2); }
+  .name { font-size: 15px; font-weight: 500; }
+  .vendor { font-size: 12px; color: var(--kimi-color-text-tertiary); }
+  .chip { margin-inline-start: auto; font-size: 12px; padding: 1px 8px; border-radius: var(--kimi-radius-chip); white-space: nowrap; }
+  .chip.on { color: var(--kimi-color-positive); background: color-mix(in srgb, var(--kimi-color-positive) 12%, transparent); }
+  .chip.off { color: var(--kimi-color-text-tertiary); background: var(--kimi-color-surface-muted); }
+  .mid { display: flex; align-items: baseline; gap: var(--kimi-space-2); margin-block-end: var(--kimi-space-2); }
+  .remain { font-size: 24px; font-weight: 500; line-height: 1.15; }
+  .unit { font-size: 13px; color: var(--kimi-color-text-tertiary); }
+  .pct { margin-inline-start: auto; font-size: 14px; font-weight: 500; }
+  .pct.low { color: var(--kimi-color-warning); }
+  .pct.crit { color: var(--kimi-color-danger); }
+  .bar { height: 6px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-surface-muted); overflow: hidden; margin-block-end: var(--kimi-space-2); }
+  .bar i { display: block; height: 100%; border-radius: var(--kimi-radius-full); background: var(--kimi-color-accent); transition: width var(--t-normal) var(--ease-out); }
+  .bar.warn i { background: var(--kimi-color-warning); }
+  .bar.crit i { background: var(--kimi-color-danger); }
+  .sub { display: flex; flex-wrap: wrap; gap: var(--kimi-space-1) var(--kimi-space-3); font-size: 12px; color: var(--kimi-color-text-tertiary); }
+
+  .err { padding: var(--kimi-space-4); border: 0.5px solid var(--kimi-color-border); border-radius: var(--kimi-radius-panel); }
+  .err .t { font-size: 15px; font-weight: 500; margin-block-end: var(--kimi-space-1); display: flex; align-items: center; gap: var(--kimi-space-2); }
+  .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
+  .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
+  .empty { font-size: 14px; color: var(--kimi-color-text-tertiary); padding-block: var(--kimi-space-4); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="head">
+    <h1>火山方舟免费额度</h1>
+    <span class="meta" id="updated">—</span>
+  </div>
+  <div class="summary" id="summary">正在读取额度数据…</div>
+  <div id="list"></div>
+</div>
+
+<script>
+(function () {
+  var SAMPLE = {
+    ok: true,
+    accountId: 2133281834,
+    updatedAt: 'sample',
+    models: [
+      { name: 'doubao-seed-2-1-turbo', display: 'Doubao-Seed-2.1-turbo', vendor: '字节跳动', opened: true, total: 500000, consumed: 9504, remaining: 490496, syncTime: '2026-10-21T11:59:31+08:00', priceIn: 0.003, priceOut: 0.015 },
+      { name: 'doubao-seed-2-1-lite', display: 'Doubao-Seed-2.1-lite', vendor: '字节跳动', opened: true, total: 500000, consumed: 0, remaining: 500000, syncTime: null, priceIn: 0.0008, priceOut: 0.0027 },
+      { name: 'glm-5-2', display: 'GLM-5.2', vendor: '智谱AI', opened: true, total: 500000, consumed: 0, remaining: 500000, syncTime: null, priceIn: 0.008, priceOut: 0.028 }
+    ]
+  };
+
+  function fmt(n) { return (n == null ? '—' : Number(n).toLocaleString('en-US')); }
+  function fmtPrice(p) { return p == null ? null : '¥' + p + '/千tokens'; }
+
+  function render(data) {
+    var list = document.getElementById('list');
+    var summary = document.getElementById('summary');
+    var updated = document.getElementById('updated');
+
+    if (!data || data.ok === false) {
+      var isAuth = data && data.error === 'auth';
+      list.innerHTML =
+        '<div class="err"><div class="t"><span class="dot"></span>' +
+        (isAuth ? '控制台登录已过期' : '额度读取失败') +
+        '</div><div class="d">' +
+        (data && data.detail ? escapeHtml(data.detail) : (isAuth ? '需要重新提取一次火山引擎的登录 cookie，告诉 Kimi 刷新即可。' : '稍后自动重试。')) +
+        '</div></div>';
+      summary.textContent = isAuth ? '登录态失效' : '暂时无法获取数据';
+      updated.textContent = '—';
+      return;
+    }
+
+    var models = data.models || [];
+    updated.textContent = '账号 ' + (data.accountId || '');
+    if (!models.length) {
+      summary.textContent = '暂无已开通的模型';
+      list.innerHTML = '<div class="empty">还没有开通任何模型</div>';
+      return;
+    }
+
+    var opened = models.filter(function (m) { return m.opened; });
+    var closed = models.filter(function (m) { return !m.opened; });
+    var totalAll = 0, remainAll = 0;
+    opened.forEach(function (m) { totalAll += m.total || 0; remainAll += m.remaining || 0; });
+    summary.textContent = opened.length + ' 个已开通 · 合计剩余 ' + fmt(remainAll) + ' / ' + fmt(totalAll) + ' tokens' +
+      (closed.length ? ' · 另有 ' + closed.length + ' 个未开通（各送 ' + fmt(closed[0].total || 0) + '）' : '');
+
+    var html = opened.map(rowHtml).join('');
+    if (closed.length) {
+      html += '<div class="row"><div class="top"><span class="name" style="font-weight:400;font-size:14px;color:var(--kimi-color-text-secondary)">未开通 ' + closed.length + ' 个（开通即送 ' + fmt(closed[0].total || 0) + ' tokens）</span></div>' +
+        '<div class="sub">' + closed.slice(0, 6).map(function (m) { return '<span>' + escapeHtml(m.display || m.name) + '</span>'; }).join('<span>·</span>') +
+        (closed.length > 6 ? '<span>等</span>' : '') + '</div></div>';
+    }
+    list.innerHTML = html;
+  }
+
+  function rowHtml(m) {
+      var pct = m.total > 0 ? Math.max(0, Math.min(100, (m.remaining / m.total) * 100)) : 0;
+      var cls = pct <= 10 ? 'crit' : (pct <= 30 ? 'warn' : '');
+      var subs = [];
+      subs.push('已用 ' + fmt(m.consumed));
+      if (m.priceIn != null) subs.push('输入 ' + fmtPrice(m.priceIn));
+      if (m.priceOut != null) subs.push('输出 ' + fmtPrice(m.priceOut));
+      return '<div class="row">' +
+        '<div class="top"><span class="name">' + escapeHtml(m.display || m.name) + '</span>' +
+        '<span class="vendor">' + escapeHtml(m.vendor || '') + '</span>' +
+        '<span class="chip ' + (m.opened ? 'on' : 'off') + '">' + (m.opened ? '已开通' : '未开通') + '</span></div>' +
+        '<div class="mid"><span class="remain num">' + fmt(m.remaining) + '</span>' +
+        '<span class="unit">/ ' + fmt(m.total) + ' tokens</span>' +
+        '<span class="pct num ' + cls + '">' + pct.toFixed(1) + '%</span></div>' +
+        '<div class="bar ' + cls + '"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="sub">' + subs.map(escapeHtml).join('<span>·</span>') + '</div>' +
+        '</div>';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var W = window.DaimonWidget;
+  if (W && typeof W.onDataChange === 'function') {
+    var current = (W.data && W.data.main) || SAMPLE;
+    render(current);
+    W.onDataChange(function (data) { render((data && data.main) || SAMPLE); });
+  } else {
+    render(SAMPLE);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+{
+  "version": 1,
+  "widget": {
+    "widgetId": "widget_48a7fa8e-93fe-4e18-b9f1-7fa88e8c27ba",
+    "title": "火山方舟模型额度",
+    "description": "火山引擎方舟大模型免费推理额度的实时看板：各模型剩余/总量、开通状态与按量价格。",
+    "kind": "regular",
+    "capabilities": [],
+    "type": "html",
+    "faces": {},
+    "slots": {
+      "main": {
+        "kind": "json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "ok"
+          ],
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "error": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "accountId": {
+              "type": "number"
+            },
+            "updatedAt": {
+              "type": "string"
+            },
+            "models": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "display",
+                  "opened",
+                  "total",
+                  "remaining"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "display": {
+                    "type": "string"
+                  },
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "opened": {
+                    "type": "boolean"
+                  },
+                  "total": {
+                    "type": "number"
+                  },
+                  "consumed": {
+                    "type": "number"
+                  },
+                  "remaining": {
+                    "type": "number"
+                  },
+                  "syncTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "priceIn": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "priceOut": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "latestData": {
+      "main": {
+        "ok": true,
+        "accountId": 2133281834,
+        "updatedAt": "20261022093313D4844E9717CF08CF963D",
+        "models": [
+          {
+            "name": "doubao-seed-2-1-lite",
+            "display": "Doubao-Seed-2.1-lite",
+            "vendor": "字节跳动",
+            "opened": true,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": "2026-10-21T11:38:18+08:00",
+            "priceIn": 0.0008,
+            "priceOut": 0.0027,
+            "remaining": 500000
+          },
+          {
+            "name": "glm-5-2",
+            "display": "GLM-5.2",
+            "vendor": "智谱AI",
+            "opened": true,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": "2026-10-21T11:42:20+08:00",
+            "priceIn": 0.008,
+            "priceOut": 0.028,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-2-1-turbo",
+            "display": "Doubao-Seed-2.1-turbo",
+            "vendor": "字节跳动",
+            "opened": true,
+            "total": 500000,
+            "consumed": 9504,
+            "syncTime": "2026-10-21T11:59:31+08:00",
+            "priceIn": 0.003,
+            "priceOut": 0.015,
+            "remaining": 490496
+          },
+          {
+            "name": "deepseek-v4-1-flash-economy",
+            "display": "DeepSeek-V4.1-Flash经济版",
+            "vendor": "DeepSeek",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0016,
+            "priceOut": 0.0064,
+            "remaining": 500000
+          },
+          {
+            "name": "deepseek-v4-1-flash",
+            "display": "DeepSeek-V4.1-Flash",
+            "vendor": "DeepSeek",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.002,
+            "priceOut": 0.008,
+            "remaining": 500000
+          },
+          {
+            "name": "glm-5-3-flash",
+            "display": "GLM-5.3-Flash",
+            "vendor": "智谱AI",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0008,
+            "priceOut": 0.0028,
+            "remaining": 500000
+          },
+          {
+            "name": "deepseek-v4-pro-ga",
+            "display": "DeepSeek-V4-Pro正式版",
+            "vendor": "DeepSeek",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.009,
+            "priceOut": 0.027,
+            "remaining": 500000
+          },
+          {
+            "name": "deepseek-v4-flash-ga",
+            "display": "DeepSeek-V4-Flash正式版",
+            "vendor": "DeepSeek",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.003,
+            "priceOut": 0.009,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-evolving",
+            "display": "Doubao-Seed-Evolving",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.006,
+            "priceOut": 0.03,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-2-0-mini",
+            "display": "Doubao-Seed-2.0-mini",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0002,
+            "priceOut": 0.002,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-2-0-lite",
+            "display": "Doubao-Seed-2.0-lite",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0006,
+            "priceOut": 0.0036,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-2-1-pro",
+            "display": "Doubao-Seed-2.1-pro",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.006,
+            "priceOut": 0.03,
+            "remaining": 500000
+          },
+          {
+            "name": "deepseek-v4-pro",
+            "display": "DeepSeek-V4-pro",
+            "vendor": "DeepSeek",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.009,
+            "priceOut": 0.027,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-2-0-code",
+            "display": "Doubao-Seed-2.0-Code",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0032,
+            "priceOut": 0.016,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-2-0-pro",
+            "display": "Doubao-Seed-2.0-pro",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0032,
+            "priceOut": 0.016,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-character",
+            "display": "Doubao-Seed-Character",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0008,
+            "priceOut": 0.002,
+            "remaining": 500000
+          },
+          {
+            "name": "doubao-seed-translation",
+            "display": "Doubao-Seed-Translation",
+            "vendor": "字节跳动",
+            "opened": false,
+            "total": 500000,
+            "consumed": 0,
+            "syncTime": null,
+            "priceIn": 0.0012,
+            "priceOut": 0.0036,
+            "remaining": 500000
+          }
+        ]
+      }
+    },
+    "status": "idle",
+    "lastRun": {
+      "runId": "run_9ad320d5-73ab-4ced-b865-8dcaba98b288",
+      "status": "succeeded",
+      "startedAt": "2026-10-22T01:33:13.265Z",
+      "completedAt": "2026-10-22T01:33:15.327Z"
+    },
+    "bindings": {
+      "main": "binding_f814169d-ea21-42fe-a142-36852b131972"
+    },
+    "createdAt": "2026-10-22T01:30:55.081Z",
+    "updatedAt": "2026-10-22T01:33:15.342Z"
+  }
+}
