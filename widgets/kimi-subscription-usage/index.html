@@ -108,7 +108,12 @@
   function insightHtml(d) {
     if (!d || d.ok === false) return '';
     var parts = [];
-    if (d.burnPerDay) parts.push('日均 <b>' + Number(d.burnPerDay).toFixed(1) + ' 个点</b>');
+    if (d.rateBasis === 'cycle' && d.cycleDays != null && d.remainingPct != null) {
+      parts.push('本周期日均 <b>' + Number(d.burnPerDay).toFixed(1) + ' 个点</b>（' +
+        Math.round(d.cycleDays) + ' 天用了 ' + (100 - Number(d.remainingPct)).toFixed(1) + '%）');
+    } else if (d.burnPerDay) {
+      parts.push('日均 <b>' + Number(d.burnPerDay).toFixed(1) + ' 个点</b>');
+    }
     var resetFirst = d.daysLeft != null && d.daysToReset != null && d.daysLeft >= d.daysToReset;
     if (resetFirst) {
       // 外推的用完日期落在重置之后 → 没意义，重置会把额度拉回 100%

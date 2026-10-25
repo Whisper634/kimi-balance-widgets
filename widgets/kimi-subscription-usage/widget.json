@@ -95,6 +95,19 @@
                 "number",
                 "null"
               ]
+            },
+            "rateBasis": {
+              "type": "string",
+              "enum": [
+                "cycle",
+                "history"
+              ]
+            },
+            "cycleDays": {
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [

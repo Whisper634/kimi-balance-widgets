@@ -256,3 +256,32 @@ def tokens_value(remaining_tokens, price_per_1k):
         return float(remaining_tokens) / 1000.0 * float(price_per_1k)
     except (TypeError, ValueError):
         return None
+
+def previous_reset(reset_at):
+    """上一个重置时刻：按"每月同一天"倒推；目标月没有这一天就取月末。"""
+    d = parse_ts(reset_at)
+    if not d:
+        return None
+    import calendar
+    y, m, day = d.year, d.month, d.day
+    pm_y, pm_m = (y, m - 1) if m > 1 else (y - 1, 12)
+    last_day = calendar.monthrange(pm_y, pm_m)[1]
+    prev = d.replace(year=pm_y, month=pm_m, day=min(day, last_day))
+    return prev
+
+
+def cycle_rate(reset_at, used_pct, now=None):
+    """订阅额度的「本周期日均」：周期起点额度=100%，所以日均 = 已用百分点 / 周期已过天数。
+
+    只看最近两个历史点会把速率算小一个数量级（跨度可能只有几小时），
+    周期基线才是对的。返回 (日均, 周期已过天数) 或 (None, None)。
+    """
+    prev = previous_reset(reset_at)
+    if prev is None or used_pct is None:
+        return None, None
+    now_dt = parse_ts(now) or now_utc()
+    days = (now_dt - prev).total_seconds() / 86400.0
+    if days <= 0.5:
+        return None, None
+    return float(used_pct) / days, days
+

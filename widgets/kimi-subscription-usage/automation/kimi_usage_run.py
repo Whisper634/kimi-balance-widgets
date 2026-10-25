@@ -26,7 +26,13 @@ def derived(remaining_pct, reset_at, assets_dir):
     """订阅额度的记账/外推：剩余百分比 → 日均消耗几个点 → 还能撑几天 → 是否会在重置前打光。"""
     th = insights.load_thresholds(assets_dir)
     points = insights.record_value(os.path.join(assets_dir, "history.json"), remaining_pct)
-    rate = insights.rate_per_day(points, th["windowDays"])
+    used_pct = 100.0 - float(remaining_pct) if remaining_pct is not None else None
+    cyc_rate, cycle_days = insights.cycle_rate(reset_at, used_pct)
+    hist_rate = insights.rate_per_day(points, th["windowDays"])
+    if cyc_rate and cyc_rate > 0:
+        rate, rate_basis = cyc_rate, "cycle"
+    else:
+        rate, rate_basis = hist_rate, "history"
     days, exhaust_at = insights.project(remaining_pct, rate)
     reset_days = insights.days_between(insights.now_utc(), reset_at)
     reset_days = reset_days if reset_days > 0 else None
@@ -36,7 +42,10 @@ def derived(remaining_pct, reset_at, assets_dir):
         level = insights.worst(level, "alert")
 
     if rate:
-        base = "日均消耗 %.1f 个百分点" % rate
+        if rate_basis == "cycle":
+            base = "本周期日均 %.1f 个点（%.0f 天用了 %.1f%%）" % (rate, cycle_days or 0, used_pct or 0)
+        else:
+            base = "日均消耗 %.1f 个百分点" % rate
         if days is None:
             hint = base + "，还在攒样本"
         elif days <= 0:
@@ -44,13 +53,18 @@ def derived(remaining_pct, reset_at, assets_dir):
         elif reset_days is not None and days < reset_days:
             hint = "%s，约 %s 打光 —— 距重置还有 %d 天，撑不到重置" % (
                 base, insights.date_label(exhaust_at), int(round(reset_days)))
+        elif reset_days is not None:
+            hint = "%s，够用到 %s 重置（还有 %d 天）" % (
+                base, insights.date_label(reset_at), int(round(reset_days)))
         else:
             hint = "%s，还能撑 %s（约 %s）" % (base, insights.day_text(days), insights.date_label(exhaust_at))
     else:
-        hint = "近 %d 天没有观测到消耗" % int(th["windowDays"])
+        hint = "本周期还没有消耗"
 
     return {
         "level": level,
+        "rateBasis": rate_basis,
+        "cycleDays": (round(cycle_days, 1) if cycle_days else None),
         "burnPerDay": (round(rate, 3) if rate else None),
         "daysLeft": (round(days, 2) if days is not None else None),
         "daysToReset": (int(round(reset_days)) if reset_days is not None else None),
