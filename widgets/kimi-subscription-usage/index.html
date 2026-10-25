@@ -57,9 +57,10 @@
   var SAMPLE = { ok: true, active: true, plan: 'Allegretto', totalPct: 42.4, remainingPct: 57.6, codePct: 0, resetAt: '2026-11-17T09:10:55Z', subEnd: '2027-07-18T00:00:00Z', boostLeft: 0, boostTotal: 175, boostMonthlyUsed: 0, updatedAt: 'sample' };
 
   function pct(n) { return (n == null || isNaN(n)) ? '—' : Number(n).toFixed(1) + '%'; }
-  function fmtYuan(cents) {
-    if (cents == null) return '—';
-    return '¥' + (Number(cents) / 100).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  // 服务端已经把 priceInCents 除过 100 了（单位=元），这里不要再除一次
+  function fmtYuan(yuan) {
+    if (yuan == null) return '—';
+    return '¥' + Number(yuan).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function fmtDate(s) {
     if (!s) return '—';
@@ -108,10 +109,16 @@
     if (!d || d.ok === false) return '';
     var parts = [];
     if (d.burnPerDay) parts.push('日均 <b>' + Number(d.burnPerDay).toFixed(1) + ' 个点</b>');
-    if (d.daysLeft != null) parts.push('还能撑 <b>' + (d.daysLeft > 999 ? '999+' : Math.max(0, Math.round(d.daysLeft))) + ' 天</b>');
-    if (d.exhaustAt) parts.push('约 ' + md(d.exhaustAt) + ' 打光');
+    var resetFirst = d.daysLeft != null && d.daysToReset != null && d.daysLeft >= d.daysToReset;
+    if (resetFirst) {
+      // 外推的用完日期落在重置之后 → 没意义，重置会把额度拉回 100%
+      parts.push('够用到 <b>' + md(d.resetAt) + ' 重置</b>');
+    } else if (d.daysLeft != null) {
+      parts.push('还能撑 <b>' + (d.daysLeft > 999 ? '999+' : Math.max(0, Math.round(d.daysLeft))) + ' 天</b>');
+      if (d.exhaustAt) parts.push('约 ' + md(d.exhaustAt) + ' 打光');
+      if (d.daysToReset != null) parts.push('<b>撑不到重置</b>');
+    }
     if (d.daysToReset != null) parts.push('距重置 ' + d.daysToReset + ' 天');
-    if (d.daysLeft != null && d.daysToReset != null && d.daysLeft < d.daysToReset) parts.push('<b>撑不到重置</b>');
     if (!d.burnPerDay) parts.push(d.samples > 1 ? '近 ' + (d.windowDays || 7) + ' 天没消耗' : '攒历史中，下次刷新出结论');
     if ((d.level || 'ok') === 'alert') parts.unshift('⚠️');
     return '<div class="insight ' + (d.level || 'ok') + '">' + parts.join(' · ') + '</div>';
