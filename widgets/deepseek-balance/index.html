@@ -52,7 +52,7 @@
   <div id="body">正在读取余额…</div>
   <div id="insight"></div>
     <div class="range-tabs" id="range-tabs">
-    <button data-range="1h">1 小时</button><button data-range="24h">1 天</button><button data-range="14d" class="on">14 天</button><button data-range="30d">1 个月</button>
+    <button data-range="24h">1 天</button><button data-range="14d" class="on">14 天</button><button data-range="30d">1 个月</button>
   </div>
   <div id="chart"></div>
 </div>
@@ -115,7 +115,9 @@
   function fmtUsed(n) {
     return '¥' + Number(n).toFixed(2);
   }
+  var RANGES = ['24h', '14d', '30d'];
   var CURRENT_RANGE = localStorage.getItem('kimiCostRange') || '14d';
+  if (RANGES.indexOf(CURRENT_RANGE) < 0) CURRENT_RANGE = '14d';
   var LAST_DATA = null;
   function spark(series) {
     if (!series || !series.points || !series.points.length) return '<div class="chart-empty">这个区间还没有采样</div>';
