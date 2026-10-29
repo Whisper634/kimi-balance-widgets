@@ -318,3 +318,68 @@ def daily_usage(points, days=14, tz_hours=8):
         out.append({"date": key[5:], "used": round(bucket.get(key, 0.0), 4)})
     return out
 
+RANGE_MS = {"1h": 3600e3, "24h": 24 * 3600e3, "14d": 14 * 864e5, "30d": 30 * 864e5}
+
+
+def chart_series(points, rng="14d", unit="money", now=None):
+    """按区间出折线：1h/24h 画数值本身，14d/30d 画每日消耗（与 DSH 看板同口径）。"""
+    pts = []
+    for p in points or []:
+        t = parse_ts(p.get("t"))
+        try:
+            v = float(p.get("v"))
+        except (TypeError, ValueError):
+            continue
+        if t:
+            pts.append((t, v))
+    pts.sort(key=lambda x: x[0])
+
+    if rng in ("14d", "30d"):
+        days = 14 if rng == "14d" else 30
+        return {"kind": "usage", "unit": unit,
+                "points": [{"label": d["date"], "v": d["used"]} for d in daily_usage(points, days)]}
+
+    now_dt = parse_ts(now) or now_utc()
+    span = RANGE_MS.get(rng, RANGE_MS["14d"])
+    from_ms = now_dt.timestamp() * 1000 - span
+    bucket_ms = (10 if rng == "1h" else 30) * 60 * 1000
+    buckets = {}
+    for t, v in pts:
+        ms = t.timestamp() * 1000
+        if ms < from_ms:
+            continue
+        key = int(ms // bucket_ms) * bucket_ms
+        buckets[key] = v
+    out = []
+    for k in sorted(buckets):
+        bj = datetime.fromtimestamp(k / 1000, tz=timezone.utc) + timedelta(hours=8)
+        out.append({"label": bj.strftime("%H:%M"), "v": round(buckets[k], 4)})
+    return {"kind": "value", "unit": unit, "points": out}
+
+
+def peak_share(points):
+    """高峰时段占比（北京时间 周一至周五 9-12、14-18）占全部消耗的百分比。"""
+    pts = []
+    for p in points or []:
+        t = parse_ts(p.get("t"))
+        try:
+            v = float(p.get("v"))
+        except (TypeError, ValueError):
+            continue
+        if t:
+            pts.append((t, v))
+    pts.sort(key=lambda x: x[0])
+    peak = off = 0.0
+    for i in range(1, len(pts)):
+        drop = pts[i - 1][1] - pts[i][1]
+        if drop <= 0:
+            continue
+        bj = pts[i][0] + timedelta(hours=8)
+        is_peak = bj.weekday() < 5 and (9 <= bj.hour < 12 or 14 <= bj.hour < 18)
+        if is_peak:
+            peak += drop
+        else:
+            off += drop
+    total = peak + off
+    return round(peak / total * 100) if total > 0 else None
+

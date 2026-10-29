@@ -42,12 +42,19 @@ def derived(total, assets_dir):
     level = insights.level_for_money(total, th["balanceWarn"], th["balanceAlert"])
     return {
         "level": level,
+        "peakShare": insights.peak_share(points),
         "burnPerDay": (round(rate, 4) if rate else None),
         "daysLeft": (round(days, 2) if days is not None else None),
         "exhaustAt": exhaust_at,
         "windowDays": int(th["windowDays"]),
         "samples": len(points),
         "series": insights.daily_usage(points, 14),
+        "charts": {
+            "1h": insights.chart_series(points, "1h", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),
+            "24h": insights.chart_series(points, "24h", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),
+            "14d": insights.chart_series(points, "14d", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),
+            "30d": insights.chart_series(points, "30d", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),
+        },
         "hint": build_hint(rate, days, exhaust_at, level, th["windowDays"]),
     }
 

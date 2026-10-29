@@ -48,6 +48,12 @@ def derived(total, assets_dir):
         "windowDays": int(th["windowDays"]),
         "samples": len(points),
         "series": insights.daily_usage(points, 14),
+        "charts": {
+            "1h": insights.chart_series(points, "1h", "money" if "balance" in 'widgets/kimi-api-balance/automation/kimi_balance_run.py' else "pct"),
+            "24h": insights.chart_series(points, "24h", "money" if "balance" in 'widgets/kimi-api-balance/automation/kimi_balance_run.py' else "pct"),
+            "14d": insights.chart_series(points, "14d", "money" if "balance" in 'widgets/kimi-api-balance/automation/kimi_balance_run.py' else "pct"),
+            "30d": insights.chart_series(points, "30d", "money" if "balance" in 'widgets/kimi-api-balance/automation/kimi_balance_run.py' else "pct"),
+        },
         "hint": build_hint(rate, days, exhaust_at, level, th["windowDays"]),
     }
 

@@ -21,7 +21,11 @@ function ok(name, cond, extra) {
 }
 
 function fakeEl() {
-  return { innerHTML: '', textContent: '', className: '', style: {}, children: [] }
+  return {
+    innerHTML: '', textContent: '', className: '', style: {}, children: [],
+    addEventListener() {}, removeEventListener() {}, closest() { return null },
+    querySelectorAll() { return [] }, setAttribute() {}, getAttribute() { return null },
+  }
 }
 
 function runCard(rel, fixture) {
@@ -35,7 +39,10 @@ function runCard(rel, fixture) {
       if (!els[id]) els[id] = fakeEl()
       return els[id]
     },
+    querySelectorAll() { return [] },
+    addEventListener() {},
   }
+  const storage = { getItem() { return null }, setItem() {} }
   const feed = { main: fixture }
   const win = {
     DaimonWidget: {
@@ -43,7 +50,7 @@ function runCard(rel, fixture) {
       onDataChange(cb) { cb(feed) },   // 第二遍渲染走派生字段
     },
   }
-  const ctx = vm.createContext({ document: doc, window: win, console, Date, Math, Number, String, isNaN })
+  const ctx = vm.createContext({ document: doc, window: win, console, Date, Math, Number, String, isNaN, localStorage: storage })
   vm.runInContext(m[1], ctx, { filename: rel })
   return els
 }
