@@ -19,7 +19,7 @@
   .status.bad { color: var(--kimi-color-danger); background: color-mix(in srgb, var(--kimi-color-danger) 12%, transparent); }
 
   .row { display: flex; align-items: baseline; justify-content: space-between; }
-  .big { font-size: 32px; font-weight: 500; line-height: 1.15; }
+  .big { font-size: 48px; font-weight: 500; line-height: 1.15; }
   .big .lbl { font-size: 13px; font-weight: 400; color: var(--kimi-color-text-secondary); margin-inline-start: var(--kimi-space-2); }
   .remain { font-size: 12px; color: var(--kimi-color-text-tertiary); }
 
@@ -36,6 +36,10 @@
   .err .t { font-size: 15px; font-weight: 500; margin-block-end: var(--kimi-space-1); display: flex; align-items: center; gap: var(--kimi-space-2); }
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
   .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
+  .chart { margin-block-start: var(--kimi-space-3); }
+  .chart svg { display: block; width: 100%; height: 54px; }
+  .chart-meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 4px; }
+  .chart-empty { margin-block-start: var(--kimi-space-3); font-size: 12px; color: var(--kimi-color-text-tertiary); }
   .insight { margin-block-start: var(--kimi-space-3); padding: var(--kimi-space-2) var(--kimi-space-3); border-radius: var(--kimi-radius-panel); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 10%, transparent); font-size: 12.5px; line-height: 1.45; color: var(--kimi-color-text-secondary); }
   .insight b { font-weight: 500; }
   .insight.warn { background: color-mix(in srgb, var(--kimi-color-warning) 14%, transparent); color: var(--kimi-color-warning); }
@@ -50,6 +54,7 @@
   </div>
   <div id="body">正在读取用量…</div>
   <div id="insight"></div>
+  <div id="chart"></div>
 </div>
 
 <script>
@@ -129,11 +134,39 @@
     return '<div class="insight ' + (d.level || 'ok') + '">' + parts.join(' · ') + '</div>';
   }
 
+  function fmtUsed(n) {
+    return Number(n).toFixed(1) + ' 个点';
+  }
+  function spark(series) {
+    if (!series || !series.length) return '';
+    var max = Math.max.apply(null, series.map(function (p) { return p.used; }));
+    if (!(max > 0)) return '<div class="chart-empty">近 14 天没有观测到消耗</div>';
+    var w = 100, h = 34, pad = 2;
+    var step = series.length > 1 ? (w - pad * 2) / (series.length - 1) : 0;
+    var line = series.map(function (p, i) {
+      var x = pad + i * step, y = h - pad - (p.used / max) * (h - pad * 2);
+      return x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ');
+    var area = line + ' ' + (pad + (series.length - 1) * step).toFixed(2) + ',' + (h - pad) + ' ' + pad + ',' + (h - pad);
+    var dots = series.map(function (p, i) {
+      if (!p.used) return '';
+      var x = pad + i * step, y = h - pad - (p.used / max) * (h - pad * 2);
+      return '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="1.1" fill="var(--kimi-color-accent)"><title>' +
+        p.date + '：' + fmtUsed(p.used) + '</title></circle>';
+    }).join('');
+    return '<div class="chart"><svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+      '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 16%, transparent)"/>' +
+      '<polyline points="' + line + '" fill="none" stroke="var(--kimi-color-accent)" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>' +
+      dots + '</svg><div class="chart-meta"><span>近 14 天每日消耗</span><span>峰值 ' + fmtUsed(max) + '</span></div></div>';
+  }
+
   var _render = render;
   render = function (d) {
     _render(d);
     var box = document.getElementById('insight');
     if (box) box.innerHTML = insightHtml(d);
+    var cb = document.getElementById('chart');
+    if (cb) cb.innerHTML = (d && d.ok !== false) ? spark(d.series) : '';
   };
 
   var W = window.DaimonWidget;

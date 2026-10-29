@@ -47,6 +47,7 @@ def derived(total, assets_dir):
         "exhaustAt": exhaust_at,
         "windowDays": int(th["windowDays"]),
         "samples": len(points),
+        "series": insights.daily_usage(points, 14),
         "hint": build_hint(rate, days, exhaust_at, level, th["windowDays"]),
     }
 

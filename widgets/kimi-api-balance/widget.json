@@ -80,6 +80,24 @@
             },
             "samples": {
               "type": "number"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "date",
+                  "used"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "used": {
+                    "type": "number"
+                  }
+                }
+              }
             }
           },
           "required": [

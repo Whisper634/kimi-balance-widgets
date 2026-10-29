@@ -71,6 +71,7 @@ def derived(remaining_pct, reset_at, assets_dir):
         "exhaustAt": exhaust_at,
         "windowDays": int(th["windowDays"]),
         "samples": len(points),
+        "series": insights.daily_usage(points, 14),
         "hint": hint,
     }
 

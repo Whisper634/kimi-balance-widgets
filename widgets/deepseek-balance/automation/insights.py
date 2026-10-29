@@ -285,3 +285,36 @@ def cycle_rate(reset_at, used_pct, now=None):
         return None, None
     return float(used_pct) / days, days
 
+def daily_usage(points, days=14, tz_hours=8):
+    """按天聚合消耗（与 DSH 看板同口径）。
+
+    相邻两次采样的下降量记到后一个点所在的那一天（默认北京时间）；
+    充值 / 额度重置造成的上涨不计入。返回最近 days 天，旧→新，缺采样补 0。
+    """
+    pts = []
+    for p in points or []:
+        t = parse_ts(p.get("t"))
+        try:
+            v = float(p.get("v"))
+        except (TypeError, ValueError):
+            continue
+        if t:
+            pts.append((t, v))
+    pts.sort(key=lambda x: x[0])
+
+    bucket = {}
+    for i in range(1, len(pts)):
+        drop = pts[i - 1][1] - pts[i][1]
+        if drop <= 0:
+            continue
+        key = (pts[i][0] + timedelta(hours=tz_hours)).strftime("%Y-%m-%d")
+        bucket[key] = bucket.get(key, 0.0) + drop
+
+    now = now_utc()
+    out = []
+    for i in range(days - 1, -1, -1):
+        d = now - timedelta(days=i)
+        key = (d + timedelta(hours=tz_hours)).strftime("%Y-%m-%d")
+        out.append({"date": key[5:], "used": round(bucket.get(key, 0.0), 4)})
+    return out
+
