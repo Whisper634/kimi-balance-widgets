@@ -66,7 +66,7 @@ ok('余额渲染出来了', els.body.innerHTML.includes('96.50'))
 ok('决策行有日均与天数', els.insight.innerHTML.includes('日均') && els.insight.innerHTML.includes('天'))
 ok('决策行按级别带 class', els.insight.innerHTML.includes('insight ok'))
 ok('折线图渲染出来了', els.chart.innerHTML.includes('<svg') && els.chart.innerHTML.includes('10-28'))
-ok('大字号已生效', fs.readFileSync(path.join(REPO, 'widgets/deepseek-balance/index.html'), 'utf8').includes('font-size: 56px'))
+ok('大字号已生效', fs.readFileSync(path.join(REPO, 'widgets/deepseek-balance/index.html'), 'utf8').includes('font-size: 48px'))
 
 console.log('[卡片 2] Kimi API 余额（告急态）')
 els = runCard('widgets/kimi-api-balance/index.html', {

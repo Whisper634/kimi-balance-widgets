@@ -18,10 +18,10 @@
   .status.ok { color: var(--kimi-color-positive); background: color-mix(in srgb, var(--kimi-color-positive) 12%, transparent); }
   .status.bad { color: var(--kimi-color-danger); background: color-mix(in srgb, var(--kimi-color-danger) 12%, transparent); }
 
-  .big { font-size: 56px; font-weight: 500; line-height: 1.15; margin-block-end: var(--kimi-space-1); }
+  .big { font-size: 48px; font-weight: 500; line-height: 1.15; margin-block-end: var(--kimi-space-1); }
   .cur { font-size: 15px; color: var(--kimi-color-text-secondary); margin-inline-start: var(--kimi-space-1); }
 
-  .bar { display: flex; height: 10px; border-radius: var(--kimi-radius-full); overflow: hidden; background: color-mix(in srgb, var(--kimi-color-text-tertiary) 18%, transparent); margin-block-start: var(--kimi-space-3); }
+  .bar { display: flex; height: 6px; border-radius: var(--kimi-radius-full); overflow: hidden; background: color-mix(in srgb, var(--kimi-color-text-tertiary) 18%, transparent); margin-block-start: var(--kimi-space-3); }
   .bar .seg { height: 100%; }
   .bar .seg.cash { background: var(--kimi-color-positive); }
   .bar .seg.voucher { background: var(--kimi-color-brand, var(--kimi-color-accent, #4f6ef7)); }
@@ -35,10 +35,7 @@
   .err { padding: var(--kimi-space-4); border: 0.5px solid var(--kimi-color-border); border-radius: var(--kimi-radius-panel); }
   .err .t { font-size: 15px; font-weight: 500; margin-block-end: var(--kimi-space-1); display: flex; align-items: center; gap: var(--kimi-space-2); }
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
-  .dot { width: 8px; height: 10px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
-  .range-tabs { display: flex; gap: 6px; margin-block-start: var(--kimi-space-3); }
-  .range-tabs button { flex: 1; font: inherit; font-size: 11px; padding: 3px 0; border-radius: var(--kimi-radius-chip); background: transparent; border: 0.5px solid var(--kimi-color-border); color: var(--kimi-color-text-tertiary); cursor: pointer; }
-  .range-tabs button.on { background: color-mix(in srgb, var(--kimi-color-accent) 16%, transparent); border-color: color-mix(in srgb, var(--kimi-color-accent) 50%, transparent); color: var(--kimi-color-accent); }
+  .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
   .chart { margin-block-start: var(--kimi-space-3); }
   .chart svg { display: block; width: 100%; height: 54px; }
   .chart-meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 4px; }
@@ -57,9 +54,6 @@
   </div>
   <div id="body">正在读取余额…</div>
   <div id="insight"></div>
-    <div class="range-tabs" id="range-tabs">
-    <button data-range="24h">1 天</button><button data-range="14d" class="on">14 天</button><button data-range="30d">1 个月</button>
-  </div>
   <div id="chart"></div>
 </div>
 
@@ -134,65 +128,38 @@
   function fmtUsed(n) {
     return '¥' + Number(n).toFixed(2);
   }
-  var RANGES = ['24h', '14d', '30d'];
-  var CURRENT_RANGE = localStorage.getItem('kimiCostRange') || '14d';
-  if (RANGES.indexOf(CURRENT_RANGE) < 0) CURRENT_RANGE = '14d';
-  var LAST_DATA = null;
   function spark(series) {
-    if (!series || !series.points || !series.points.length) return '<div class="chart-empty">这个区间还没有采样</div>';
-    var pts = series.points;
+    if (!series || !series.length) return '';
+    var max = Math.max.apply(null, series.map(function (p) { return p.used; }));
+    if (!(max > 0)) return '<div class="chart-empty">近 14 天没有观测到消耗</div>';
     var w = 100, h = 34, pad = 2;
-    var vals = pts.map(function (p) { return Number(p.v); });
-    var max = Math.max.apply(null, vals), min = Math.min.apply(null, vals);
-    var isValue = series.kind === 'value';
-    var spanV = max - min;
-    function yOf(v) {
-      if (isValue) return spanV === 0 ? h / 2 : pad + (1 - (v - min) / spanV) * (h - pad * 2);
-      return h - pad - (v / (max || 1)) * (h - pad * 2);
-    }
-    var step = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0;
-    var line = pts.map(function (p, i) { return (pad + i * step).toFixed(2) + ',' + yOf(p.v).toFixed(2); }).join(' ');
-    var area = line + ' ' + (pad + (pts.length - 1) * step).toFixed(2) + ',' + (h - pad) + ' ' + pad + ',' + (h - pad);
-    var dots = pts.map(function (p, i) {
-      var x = pad + i * step;
-      return '<circle cx="' + x.toFixed(2) + '" cy="' + yOf(p.v).toFixed(2) + '" r="0.9" fill="var(--kimi-color-accent)"><title>' +
-        p.label + '：' + fmtUsed(p.v) + '</title></circle>';
+    var step = series.length > 1 ? (w - pad * 2) / (series.length - 1) : 0;
+    var line = series.map(function (p, i) {
+      var x = pad + i * step, y = h - pad - (p.used / max) * (h - pad * 2);
+      return x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ');
+    var area = line + ' ' + (pad + (series.length - 1) * step).toFixed(2) + ',' + (h - pad) + ' ' + pad + ',' + (h - pad);
+    var dots = series.map(function (p, i) {
+      if (!p.used) return '';
+      var x = pad + i * step, y = h - pad - (p.used / max) * (h - pad * 2);
+      return '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="1.1" fill="var(--kimi-color-accent)"><title>' +
+        p.date + '：' + fmtUsed(p.used) + '</title></circle>';
     }).join('');
-    var meta = isValue
-      ? '<span>' + pts[0].label + ' → ' + pts[pts.length - 1].label + '</span><span>' + fmtUsed(min) + ' ~ ' + fmtUsed(max) + '</span>'
-      : '<span>每日消耗</span><span>峰值 ' + fmtUsed(max) + '</span>';
-    var axis = '<div class="chart-axis"><span>' + pts[0].label + '</span><span>' + pts[Math.floor(pts.length / 2)].label + '</span><span>' + pts[pts.length - 1].label + '</span></div>';
     return '<div class="chart"><svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
       '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 16%, transparent)"/>' +
       '<polyline points="' + line + '" fill="none" stroke="var(--kimi-color-accent)" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>' +
-      dots + '</svg><div class="chart-meta">' + meta + '</div>' + axis + '</div>';
+      dots + '</svg><div class="chart-meta"><span>近 14 天每日消耗</span><span>峰值 ' + fmtUsed(max) + '</span></div></div>';
   }
-  function paintChart() {
-    var d = LAST_DATA;
-    var cb = document.getElementById('chart');
-    if (!cb) return;
-    if (!d || d.ok === false) { cb.innerHTML = ''; return; }
-    var chart = (d.charts && d.charts[CURRENT_RANGE]) || (d.series ? { kind: 'usage', points: (d.series || []).map(function (p) { return { label: p.date, v: p.used }; }) } : null);
-    cb.innerHTML = spark(chart);
-    var tabs = document.querySelectorAll('#range-tabs button');
-    for (var i = 0; i < tabs.length; i++) tabs[i].className = tabs[i].getAttribute('data-range') === CURRENT_RANGE ? 'on' : '';
-  }
+
   var _render = render;
   render = function (d) {
     _render(d);
     var box = document.getElementById('insight');
     if (box) box.innerHTML = insightHtml(d);
-    LAST_DATA = d;
-    paintChart();
+    var cb = document.getElementById('chart');
+    if (cb) cb.innerHTML = (d && d.ok !== false) ? spark(d.series) : '';
   };
 
-  document.getElementById('range-tabs').addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    CURRENT_RANGE = b.getAttribute('data-range');
-    localStorage.setItem('kimiCostRange', CURRENT_RANGE);
-    paintChart();
-  });
   var W = window.DaimonWidget;
   var current = (W && W.data && W.data.main) || SAMPLE;
   render(current);
