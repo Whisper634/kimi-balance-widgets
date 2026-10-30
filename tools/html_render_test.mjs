@@ -59,13 +59,18 @@ console.log('[卡片 1] DeepSeek 余额')
 let els = runCard('widgets/deepseek-balance/index.html', {
   ok: true, available: true, currency: 'CNY', total: 96.5, granted: 0, toppedUp: 96.5,
   series: [{ date: '10-28', used: 1.2 }, { date: '10-29', used: 0 }],
+  charts: {
+    '1h': { kind: 'value', unit: 'money', points: [{ label: '17:00', v: 76.3 }, { label: '17:10', v: 76.2 }, { label: '17:20', v: 76.1 }] },
+    '14d': { kind: 'usage', unit: 'money', points: [{ label: '10-28', v: 1.2 }, { label: '10-29', v: 0 }] },
+  },
   level: 'ok', burnPerDay: 0.21, daysLeft: 459.5, exhaustAt: '2028-01-03T00:00:00+00:00',
   windowDays: 7, samples: 12, hint: '日均 ¥0.21',
 })
 ok('余额渲染出来了', els.body.innerHTML.includes('96.50'))
 ok('决策行有日均与天数', els.insight.innerHTML.includes('日均') && els.insight.innerHTML.includes('天'))
 ok('决策行按级别带 class', els.insight.innerHTML.includes('insight ok'))
-ok('折线图渲染出来了', els.chart.innerHTML.includes('<svg') && els.chart.innerHTML.includes('10-28'))
+ok('左图（1 小时）渲染出来了', els['chart-hour'].innerHTML.includes('<svg') && els['chart-hour'].innerHTML.includes('17:00'))
+ok('右图（每日）渲染出来了', els['chart-day'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('10-28'))
 ok('大字号已生效', fs.readFileSync(path.join(REPO, 'widgets/deepseek-balance/index.html'), 'utf8').includes('font-size: 48px'))
 
 console.log('[卡片 2] Kimi API 余额（告急态）')
@@ -73,13 +78,17 @@ els = runCard('widgets/kimi-api-balance/index.html', {
   ok: true, available: true, currency: 'CNY', total: 60.94, cash: 47.97, voucher: 12.97,
   cashPct: 78.7, voucherPct: 21.3,
   series: [{ date: '10-28', used: 0.8 }, { date: '10-29', used: 2.4 }],
+  charts: {
+    '1h': { kind: 'value', unit: 'money', points: [{ label: '17:00', v: 60.9 }, { label: '17:30', v: 60.8 }] },
+    '14d': { kind: 'usage', unit: 'money', points: [{ label: '10-28', v: 0.8 }, { label: '10-29', v: 2.4 }] },
+  },
   level: 'alert', burnPerDay: 3.2, daysLeft: 19, exhaustAt: '2026-11-10T00:00:00+00:00',
   windowDays: 7, samples: 9, hint: '余额告急',
 })
 ok('总额渲染出来了', els.body.innerHTML.includes('60.94'))
 ok('告急态渲染 ⚠️', els.insight.innerHTML.includes('⚠️'))
 ok('告急态 class 正确', els.insight.innerHTML.includes('insight alert'))
-ok('Kimi API 卡也有折线图', els.chart.innerHTML.includes('<svg'))
+ok('Kimi API 卡也有双图', els['chart-hour'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('<svg'))
 
 console.log('[卡片 3] Kimi 订阅用量（活不过重置）')
 els = runCard('widgets/kimi-subscription-usage/index.html', {
@@ -87,13 +96,17 @@ els = runCard('widgets/kimi-subscription-usage/index.html', {
   resetAt: '2026-11-17T09:10:55Z', subEnd: '2027-07-18T00:00:00Z',
   boostLeft: 0, boostTotal: 175, boostMonthlyUsed: 0,
   series: [{ date: '10-28', used: 3.1 }, { date: '10-29', used: 6.0 }],
+  charts: {
+    '1h': { kind: 'value', unit: 'pct', points: [{ label: '17:00', v: 52.8 }, { label: '17:30', v: 52.6 }] },
+    '14d': { kind: 'usage', unit: 'pct', points: [{ label: '10-28', v: 3.1 }, { label: '10-29', v: 6.0 }] },
+  },
   level: 'alert', burnPerDay: 8.5, daysLeft: 4.9, daysToReset: 26,
   exhaustAt: '2026-10-29T00:00:00+00:00', windowDays: 7, samples: 30, hint: '撑不到重置',
 })
 ok('用量渲染出来了', els.body.innerHTML.includes('42.5%'))
 ok('决策行给出撑不到重置', els.insight.innerHTML.includes('撑不到重置'))
 ok('决策行有距重置天数', els.insight.innerHTML.includes('距重置 26'))
-ok('订阅卡折线图按"个点"渲染', els.chart.innerHTML.includes('个点'))
+ok('订阅卡 Y 轴带"点"单位', els['chart-day'].innerHTML.includes('点') || els['chart-hour'].innerHTML.includes('点'))
 
 console.log('[卡片 4] 火山免费额度（价值排序）')
 els = runCard('widgets/volc-engine-quota/index.html', {

@@ -50,6 +50,7 @@ def derived(total, assets_dir):
         "samples": len(points),
         "series": insights.daily_usage(points, 14),
         "charts": {
+            "1h": insights.chart_series(points, "1h", "money"),
             "24h": insights.chart_series(points, "24h", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),
             "14d": insights.chart_series(points, "14d", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),
             "30d": insights.chart_series(points, "30d", "money" if "balance" in 'widgets/deepseek-balance/automation/deepseek_balance_run.py' else "pct"),

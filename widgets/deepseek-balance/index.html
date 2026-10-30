@@ -31,7 +31,10 @@
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
   .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
   .chart { margin-block-start: var(--kimi-space-3); }
-  .chart svg { display: block; width: 100%; height: auto; max-height: 120px; }
+    .charts { display: flex; gap: 10px; margin-block-start: var(--kimi-space-3); }
+  .charts > .chart-box { flex: 1; min-width: 0; }
+  .charts svg { display: block; width: 100%; height: auto; max-height: 96px; }
+  .chart-cap { font-size: 10.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 2px; }
   .chart-meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 4px; }
   .chart-empty { margin-block-start: var(--kimi-space-3); font-size: 12px; color: var(--kimi-color-text-tertiary); }
   .insight { margin-block-start: var(--kimi-space-3); padding: var(--kimi-space-2) var(--kimi-space-3); border-radius: var(--kimi-radius-panel); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 10%, transparent); font-size: 12.5px; line-height: 1.45; color: var(--kimi-color-text-secondary); }
@@ -48,7 +51,10 @@
   </div>
   <div id="body">正在读取余额…</div>
   <div id="insight"></div>
-  <div id="chart"></div>
+  <div class="charts">
+    <div class="chart-box"><div id="chart-hour"></div><div class="chart-cap" id="chart-hour-cap">近 1 小时</div></div>
+    <div class="chart-box"><div id="chart-day"></div><div class="chart-cap">近 14 天每日</div></div>
+  </div>
 </div>
 
 <script>
@@ -110,47 +116,62 @@
     return '¥' + Number(n).toFixed(2);
   }
   // 折线：网格 + Y 轴刻度 + X 轴日期；线细、留白足
-  function spark(series) {
-    if (!series || !series.length) return '<div class="chart-empty">近 14 天没有观测到消耗</div>';
-    var pts = series;
-    var maxV = Math.max.apply(null, pts.map(function (p) { return p.used; }));
-    if (!(maxV > 0)) return '<div class="chart-empty">近 14 天没有观测到消耗</div>';
-    var W = 320, H = 96, L = 34, R = 8, T = 10, B = 18;
+  // 左：近 1 小时（数值曲线）；右：近 14 天（每日消耗）
+  function chartSvg(series, unit) {
+    var pts = (series && series.points) || [];
+    if (!pts.length) return '<div class="chart-empty">暂无采样</div>';
+    var isValue = series.kind === 'value';
+    var W = 168, H = 92, L = 30, R = 6, T = 8, B = 16;
     var iw = W - L - R, ih = H - T - B;
-    var max = maxV, min = 0, span = max || 1;
+    var vals = pts.map(function (p) { return Number(p.v); });
+    var max = Math.max.apply(null, vals), min = Math.min.apply(null, vals);
+    if (isValue) { var pv = (max - min) * 0.15 || 0.01; min -= pv; max += pv; }
+    else { max = max || 1; min = 0; }
+    var span = (max - min) || 1;
     function xOf(i) { return L + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw); }
     function yOf(v) { return T + (1 - (v - min) / span) * ih; }
     var grid = '';
-    for (var t = 0; t <= 3; t++) {
-      var vy = max - (span * t / 3), yy = yOf(vy);
+    for (var t = 0; t <= 2; t++) {
+      var vy = max - span * t / 2, yy = yOf(vy);
       grid += '<line x1="' + L + '" y1="' + yy.toFixed(1) + '" x2="' + (W - R) + '" y2="' + yy.toFixed(1) + '" stroke="rgba(255,255,255,.10)" stroke-width="0.6" stroke-dasharray="2 2"/>';
-      grid += '<text x="' + (L - 4) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-size="7" fill="rgba(255,255,255,.45)">' + ('¥' + (Math.abs(vy) >= 10 ? vy.toFixed(0) : vy.toFixed(1))) + '</text>';
+      grid += '<text x="' + (L - 3) + '" y="' + (yy + 2.5).toFixed(1) + '" text-anchor="end" font-size="6.5" fill="rgba(255,255,255,.45)">' + ('¥' + (Math.abs(vy) >= 10 ? vy.toFixed(0) : vy.toFixed(1))) + '</text>';
     }
-    var line = pts.map(function (p, i) { return xOf(i).toFixed(1) + ',' + yOf(p.used).toFixed(1); }).join(' ');
+    var line = pts.map(function (p, i) { return xOf(i).toFixed(1) + ',' + yOf(p.v).toFixed(1); }).join(' ');
     var area = line + ' ' + xOf(pts.length - 1).toFixed(1) + ',' + (T + ih) + ' ' + xOf(0).toFixed(1) + ',' + (T + ih);
-    var xTicks = '', idx = [0, Math.floor((pts.length - 1) / 2), pts.length - 1];
-    idx.forEach(function (i, k) {
-      var anchor = k === 0 ? 'start' : (k === 2 ? 'end' : 'middle');
-      xTicks += '<text x="' + xOf(i).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="' + anchor + '" font-size="7" fill="rgba(255,255,255,.45)">' + pts[i].date + '</text>';
-    });
-    var axis = '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.22)" stroke-width="0.7"/>' +
-               '<line x1="' + L + '" y1="' + (T + ih) + '" x2="' + (W - R) + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.22)" stroke-width="0.7"/>';
-    var dots = pts.map(function (p, i) {
-      if (!p.used) return '';
-      return '<circle cx="' + xOf(i).toFixed(1) + '" cy="' + yOf(p.used).toFixed(1) + '" r="1.1" fill="var(--kimi-color-accent)"><title>' + p.date + '：' + fmtUsed(p.used) + '</title></circle>';
-    }).join('');
-    return '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
-      grid + axis + '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 12%, transparent)"/>' +
+    var xa = '', xb = '', li = [0, pts.length - 1];
+    xa = '<text x="' + xOf(0).toFixed(1) + '" y="' + (H - 4) + '" text-anchor="start" font-size="6.5" fill="rgba(255,255,255,.45)">' + pts[0].label + '</text>';
+    if (pts.length > 1) xb = '<text x="' + xOf(pts.length - 1).toFixed(1) + '" y="' + (H - 4) + '" text-anchor="end" font-size="6.5" fill="rgba(255,255,255,.45)">' + pts[pts.length - 1].label + '</text>';
+    var axis = '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.18)" stroke-width="0.6"/>' +
+               '<line x1="' + L + '" y1="' + (T + ih) + '" x2="' + (W - R) + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.18)" stroke-width="0.6"/>';
+    var dots = pts.length > 1 ? '' : '<circle cx="' + xOf(0).toFixed(1) + '" cy="' + yOf(pts[0].v).toFixed(1) + '" r="1.6" fill="var(--kimi-color-accent)"/>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + grid + axis +
+      '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 12%, transparent)"/>' +
       '<polyline points="' + line + '" fill="none" stroke="var(--kimi-color-accent)" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>' +
-      dots + xTicks + '</svg></div>';
+      dots + xa + xb + '</svg>';
+  }
+  function paintCharts(d) {
+    var hour = document.getElementById('chart-hour'), day = document.getElementById('chart-day');
+    if (!hour || !day) return;
+    if (!d || d.ok === false) { hour.innerHTML = ''; day.innerHTML = ''; return; }
+    var charts = d.charts || {};
+    var oneHour = charts['1h'] || { kind: 'value', points: [] };
+    // 4 小时采样下"近 1 小时"常常只有 0-1 个点 → 退回最近 6 个采样点，别让左图空着
+    if (!oneHour.points || oneHour.points.length < 2) {
+      var fallback = (charts['24h'] && charts['24h'].points) || [];
+      if (fallback.length >= 2) oneHour = { kind: 'value', points: fallback.slice(-6), fallback: true };
+    }
+    var hourCap = document.getElementById('chart-hour-cap');
+    if (hourCap) hourCap.textContent = oneHour.fallback ? '最近 ' + oneHour.points.length + ' 次采样' : '近 1 小时';
+    var daily = charts['14d'] || { kind: 'usage', points: (d.series || []).map(function (p) { return { label: p.date, v: p.used }; }) };
+    hour.innerHTML = chartSvg(oneHour);
+    day.innerHTML = chartSvg(daily);
   }
   var _render = render;
   render = function (d) {
     _render(d);
     var box = document.getElementById('insight');
     if (box) box.innerHTML = insightHtml(d);
-    var cb = document.getElementById('chart');
-    if (cb) cb.innerHTML = (d && d.ok !== false) ? spark(d.series) : '';
+    paintCharts(d);
   };
 
   var W = window.DaimonWidget;

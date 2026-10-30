@@ -73,6 +73,7 @@ def derived(remaining_pct, reset_at, assets_dir):
         "samples": len(points),
         "series": insights.daily_usage(points, 14),
         "charts": {
+            "1h": insights.chart_series(points, "1h", "pct"),
             "24h": insights.chart_series(points, "24h", "money" if "balance" in 'widgets/kimi-subscription-usage/automation/kimi_usage_run.py' else "pct"),
             "14d": insights.chart_series(points, "14d", "money" if "balance" in 'widgets/kimi-subscription-usage/automation/kimi_usage_run.py' else "pct"),
             "30d": insights.chart_series(points, "30d", "money" if "balance" in 'widgets/kimi-subscription-usage/automation/kimi_usage_run.py' else "pct"),
