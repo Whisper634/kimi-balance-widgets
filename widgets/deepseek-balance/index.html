@@ -18,9 +18,12 @@
   .status.ok { color: var(--kimi-color-positive); background: color-mix(in srgb, var(--kimi-color-positive) 12%, transparent); }
   .status.bad { color: var(--kimi-color-danger); background: color-mix(in srgb, var(--kimi-color-danger) 12%, transparent); }
 
-  .big { font-size: 48px; font-weight: 500; line-height: 1.15; margin-block-end: var(--kimi-space-1); }
+  .big { font-size: 56px; font-weight: 500; line-height: 1.15; margin-block-end: var(--kimi-space-1); }
   .cur { font-size: 15px; color: var(--kimi-color-text-secondary); margin-inline-start: var(--kimi-space-1); }
 
+  .bar { display: flex; height: 10px; border-radius: var(--kimi-radius-full); overflow: hidden; background: color-mix(in srgb, var(--kimi-color-text-tertiary) 18%, transparent); margin-block-start: var(--kimi-space-3); }
+  .bar > i { display: block; height: 100%; }
+  .legend { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 4px; }
   .split { display: flex; gap: var(--kimi-space-3); padding-block-start: var(--kimi-space-3); margin-block-start: var(--kimi-space-3); border-block-start: 0.5px solid var(--kimi-color-border); }
   .item { flex: 1; }
   .item .k { font-size: 12px; color: var(--kimi-color-text-tertiary); margin-block-end: var(--kimi-space-1); }
@@ -29,7 +32,7 @@
   .err { padding: var(--kimi-space-4); border: 0.5px solid var(--kimi-color-border); border-radius: var(--kimi-radius-panel); }
   .err .t { font-size: 15px; font-weight: 500; margin-block-end: var(--kimi-space-1); display: flex; align-items: center; gap: var(--kimi-space-2); }
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
-  .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
+  .dot { width: 8px; height: 10px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
   .range-tabs { display: flex; gap: 6px; margin-block-start: var(--kimi-space-3); }
   .range-tabs button { flex: 1; font: inherit; font-size: 11px; padding: 3px 0; border-radius: var(--kimi-radius-chip); background: transparent; border: 0.5px solid var(--kimi-color-border); color: var(--kimi-color-text-tertiary); cursor: pointer; }
   .range-tabs button.on { background: color-mix(in srgb, var(--kimi-color-accent) 16%, transparent); border-color: color-mix(in srgb, var(--kimi-color-accent) 50%, transparent); color: var(--kimi-color-accent); }
@@ -85,6 +88,9 @@
     status.className = 'status ' + (d.available === false ? 'bad' : 'ok');
     body.innerHTML =
       '<div class="big num">' + fmt(d.total) + '<span class="cur">' + escapeHtml(d.currency || '') + '</span></div>' +
+      '<div class="bar"><i style="width:' + (Number(d.toppedUp || 0) / ((Number(d.toppedUp || 0) + Number(d.granted || 0)) || 1) * 100).toFixed(1) + '%;background:var(--kimi-color-accent)"></i>' +
+      '<i style="width:' + (Number(d.granted || 0) / ((Number(d.toppedUp || 0) + Number(d.granted || 0)) || 1) * 100).toFixed(1) + '%;background:var(--kimi-color-positive)"></i></div>' +
+      '<div class="legend"><span>充值 ' + fmt(d.toppedUp) + '</span><span>赠送 ' + fmt(d.granted) + '</span></div>' +
       '<div class="split">' +
       '<div class="item"><div class="k">充值余额</div><div class="v num">' + fmt(d.toppedUp) + '</div></div>' +
       '<div class="item"><div class="k">赠送余额</div><div class="v num">' + fmt(d.granted) + '</div></div>' +
