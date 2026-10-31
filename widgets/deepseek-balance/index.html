@@ -134,7 +134,7 @@
     for (var t = 0; t <= 3; t++) {
       var vy = max - span * t / 3, yy = yOf(vy);
       grid += '<line x1="' + L + '" y1="' + yy.toFixed(1) + '" x2="' + (W - R) + '" y2="' + yy.toFixed(1) + '" stroke="rgba(255,255,255,.10)" stroke-width="0.6" stroke-dasharray="2 2"/>';
-      grid += '<text x="' + (L - 3) + '" y="' + (yy + 2.5).toFixed(1) + '" text-anchor="end" font-size="8" fill="rgba(255,255,255,.45)">' + ('¥' + (Math.abs(vy) >= 10 ? vy.toFixed(0) : vy.toFixed(1))) + '</text>';
+      grid += '<text x="' + (L - 3) + '" y="' + (yy + 2.5).toFixed(1) + '" text-anchor="end" font-size="8" fill="rgba(255,255,255,.45)">' + ('¥' + Number(vy).toFixed(2)) + '</text>';
     }
     var line = pts.map(function (p, i) { return xOf(i).toFixed(1) + ',' + yOf(p.v).toFixed(1); }).join(' ');
     var area = line + ' ' + xOf(pts.length - 1).toFixed(1) + ',' + (T + ih) + ' ' + xOf(0).toFixed(1) + ',' + (T + ih);
@@ -160,14 +160,19 @@
     if (!hour || !day) return;
     if (!d || d.ok === false) { hour.innerHTML = ''; day.innerHTML = ''; return; }
     var charts = d.charts || {};
-    var oneHour = charts['1h'] || { kind: 'value', points: [] };
-    // 4 小时采样下"近 1 小时"常常只有 0-1 个点 → 退回最近 6 个采样点，别让左图空着
-    if (!oneHour.points || oneHour.points.length < 2) {
-      var fallback = (charts['24h'] && charts['24h'].points) || [];
-      if (fallback.length >= 2) oneHour = { kind: 'value', points: fallback.slice(-6), fallback: true };
+    var oneHour = charts['hour'];
+    if (!oneHour || !oneHour.points || !oneHour.points.length) {
+      var src = (charts['24h'] && charts['24h'].points) || (charts['1h'] && charts['1h'].points) || [];
+      var dl = [];
+      for (var i = 1; i < src.length; i++) {
+        var dv = src[i - 1].v - src[i].v;
+        dl.push({ label: src[i].label, v: dv > 0 ? dv : 0 });
+      }
+      oneHour = { kind: 'usage', points: dl.slice(-8) };
     }
+    oneHour.kind = 'usage';
     var hourCap = document.getElementById('chart-hour-cap');
-    if (hourCap) hourCap.textContent = oneHour.fallback ? '最近 ' + oneHour.points.length + ' 次采样' : '近 1 小时';
+    if (hourCap) hourCap.textContent = '最近 ' + (oneHour.points ? oneHour.points.length : 0) + ' 次采样消耗';
     var daily = charts['14d'] || { kind: 'usage', points: (d.series || []).map(function (p) { return { label: p.date, v: p.used }; }) };
     hour.innerHTML = chartSvg(oneHour);
     day.innerHTML = chartSvg(daily);

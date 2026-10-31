@@ -383,3 +383,23 @@ def peak_share(points):
     total = peak + off
     return round(peak / total * 100) if total > 0 else None
 
+
+def usage_series(points, max_points=8):
+    """最近 N 次采样的**消耗量**（不是总量）：逐段算下降量，充值段记 0。"""
+    pts = []
+    for p in points or []:
+        t = parse_ts(p.get("t"))
+        try:
+            v = float(p.get("v"))
+        except (TypeError, ValueError):
+            continue
+        if t:
+            pts.append((t, v))
+    pts.sort(key=lambda x: x[0])
+    sel = pts[-(max_points + 1):]
+    out = []
+    for i in range(1, len(sel)):
+        drop = sel[i - 1][1] - sel[i][1]
+        bj = sel[i][0] + timedelta(hours=8)
+        out.append({"label": bj.strftime("%H:%M"), "v": round(max(0.0, drop), 4)})
+    return {"kind": "usage", "points": out}
