@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kimi 加油包</title>
+<style>
+  :root { font-family: var(--kimi-font-sans); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .wrap { padding: 20px 18px 18px; width: 100%; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--kimi-space-3); margin-block-end: var(--kimi-space-2); }
+  .head h1 { font-size: 17px; font-weight: 500; }
+  .head .meta { font-size: 12px; color: var(--kimi-color-text-tertiary); }
+  .status { font-size: 12px; padding: 1px 8px; border-radius: var(--kimi-radius-chip); white-space: nowrap; }
+  .status.ok { color: var(--kimi-color-positive); background: color-mix(in srgb, var(--kimi-color-positive) 12%, transparent); }
+  .status.bad { color: var(--kimi-color-danger); background: color-mix(in srgb, var(--kimi-color-danger) 12%, transparent); }
+
+  .big { font-size: 48px; font-weight: 500; line-height: 1.15; margin-block-end: var(--kimi-space-1); }
+  .cur { font-size: 15px; color: var(--kimi-color-text-secondary); margin-inline-start: var(--kimi-space-1); }
+  .pct { font-size: 15px; color: var(--kimi-color-text-secondary); margin-inline-start: var(--kimi-space-2); }
+
+  .bar { height: 6px; border-radius: var(--kimi-radius-full); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 18%, transparent); margin-block: var(--kimi-space-2) var(--kimi-space-1); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: var(--kimi-radius-full); background: var(--kimi-color-accent); }
+  .bar-hint { font-size: 12px; color: var(--kimi-color-text-tertiary); }
+
+  .split { display: flex; gap: var(--kimi-space-3); padding-block-start: var(--kimi-space-3); margin-block-start: var(--kimi-space-3); border-block-start: 0.5px solid var(--kimi-color-border); }
+  .item { flex: 1; }
+  .item .k { font-size: 12px; color: var(--kimi-color-text-tertiary); margin-block-end: var(--kimi-space-1); }
+  .item .v { font-size: 15px; font-weight: 500; }
+
+  .err { padding: var(--kimi-space-4); border: 0.5px solid var(--kimi-color-border); border-radius: var(--kimi-radius-panel); }
+  .err .t { font-size: 15px; font-weight: 500; margin-block-end: var(--kimi-space-1); display: flex; align-items: center; gap: var(--kimi-space-2); }
+  .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
+  .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
+
+  .charts { display: flex; gap: 10px; margin-block-start: var(--kimi-space-3); }
+  .charts > .chart-box { flex: 1; min-width: 0; }
+  .charts svg { display: block; width: 100%; height: auto; max-height: 150px; }
+  .chart-cap { font-size: 10.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 2px; }
+  .chart-empty { margin-block-start: var(--kimi-space-3); font-size: 12px; color: var(--kimi-color-text-tertiary); }
+  .insight { margin-block-start: var(--kimi-space-3); padding: var(--kimi-space-2) var(--kimi-space-3); border-radius: var(--kimi-radius-panel); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 10%, transparent); font-size: 12.5px; line-height: 1.45; color: var(--kimi-color-text-secondary); }
+  .insight b { font-weight: 500; }
+  .insight.warn { background: color-mix(in srgb, var(--kimi-color-warning) 14%, transparent); color: var(--kimi-color-warning); }
+  .insight.alert { background: color-mix(in srgb, var(--kimi-color-danger) 14%, transparent); color: var(--kimi-color-danger); }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="head">
+    <h1>Kimi 加油包</h1>
+    <span class="status ok" id="status">可用</span>
+  </div>
+  <div id="body">正在读取加油包…</div>
+  <div id="insight"></div>
+  <div class="charts">
+    <div class="chart-box"><div id="chart-hour"></div><div class="chart-cap" id="chart-hour-cap">最近 0 次采样消耗</div></div>
+    <div class="chart-box"><div id="chart-day"></div><div class="chart-cap">近 14 天每日</div></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var SAMPLE = {
+    ok: true, status: 'STATUS_ACTIVE', currency: 'CNY',
+    left: 25, total: 200, used: 175, usedPct: 87.5, remainPct: 12.5, monthlyUsed: 0,
+    topupLimit: 2975, cycleStart: '2026-10-18T06:54:10Z', cycleEnd: '2026-11-18T06:54:10Z',
+    burnPerDay: null, daysLeft: null, samples: 0, series: [], charts: {}, hint: '', updatedAt: 'sample'
+  };
+
+  function fmt(n) {
+    if (n == null) return '—';
+    return '¥' + Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function md(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return (d.getMonth() + 1) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtRate(n) {
+    if (n == null) return '—';
+    return '¥' + Number(n).toFixed(Math.abs(n) < 1 ? 3 : 2);
+  }
+
+  function insightHtml(d) {
+    if (!d || d.ok === false) return '';
+    if (d.hint) return '<div class="insight ' + (d.level || 'ok') + '">' + escapeHtml(d.hint) + '</div>';
+    var parts = [];
+    parts.push('余额 <b>' + fmt(d.left) + '</b>（已用 ' + (d.usedPct || 0) + '%）');
+    if (d.burnPerDay) parts.push('日均 ' + fmtRate(d.burnPerDay));
+    if (d.daysLeft != null) parts.push('还能撑 <b>' + (d.daysLeft > 999 ? '999+' : Math.max(0, Math.round(d.daysLeft))) + ' 天</b>');
+    if (d.exhaustAt) parts.push('约 ' + md(d.exhaustAt) + ' 用完');
+    else parts.push('攒历史中，下次刷新出结论');
+    if (d.cycleEnd) parts.push(md(d.cycleEnd) + ' 重置');
+    if ((d.level || 'ok') === 'alert') parts.unshift('⚠️');
+    return '<div class="insight ' + (d.level || 'ok') + '">' + parts.join(' · ') + '</div>';
+  }
+
+  function render(d) {
+    var status = document.getElementById('status');
+    var body = document.getElementById('body');
+    if (!d || d.ok === false) {
+      status.textContent = '读取失败';
+      status.className = 'status bad';
+      body.innerHTML = '<div class="err"><div class="t"><span class="dot"></span>加油包读取失败</div><div class="d">' +
+        escapeHtml((d && d.detail) || '稍后自动重试。') + '</div></div>';
+      return;
+    }
+    var pct = Math.max(0, Math.min(100, Number(d.usedPct || 0)));
+    var state = (d.status || '').indexOf('ACTIVE') >= 0 ? '可用' : '已停用';
+    status.textContent = state;
+    status.className = 'status ' + (state === '可用' ? 'ok' : 'bad');
+    body.innerHTML =
+      '<div class="big num">' + fmt(d.left) + '<span class="cur">' + escapeHtml(d.currency || 'CNY') + '</span>' +
+      '<span class="pct num">已用 ' + Number(d.usedPct || 0).toFixed(1) + '%</span></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="bar-hint">' + escapeHtml(md(d.cycleStart)) + ' 起本周期消费 ' + fmt(d.monthlyUsed || 0) + ' · ' + escapeHtml(md(d.cycleEnd)) + ' 重置</div>' +
+      '<div class="split">' +
+      '<div class="item"><div class="k">加油包总额</div><div class="v num">' + fmt(d.total) + '</div></div>' +
+      '<div class="item"><div class="k">已用</div><div class="v num">' + fmt(d.used) + '</div></div>' +
+      '<div class="item"><div class="k">剩余</div><div class="v num">' + fmt(d.left) + '</div></div>' +
+      '</div>';
+  }
+
+  function chartSvg(series) {
+    var pts = (series && series.points) || [];
+    if (!pts.length) return '<div class="chart-empty">暂无采样</div>';
+    var isValue = series.kind === 'value';
+    var W = 210, H = 132, L = 34, R = 8, T = 10, B = 22;
+    var iw = W - L - R, ih = H - T - B;
+    var vals = pts.map(function (p) { return Number(p.v); });
+    var max = Math.max.apply(null, vals), min = Math.min.apply(null, vals);
+    if (isValue) { var pv = (max - min) * 0.15 || 0.01; min -= pv; max += pv; }
+    else { max = max || 1; min = 0; }
+    var span = (max - min) || 1;
+    function xOf(i) { return L + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw); }
+    function yOf(v) { return T + (1 - (v - min) / span) * ih; }
+    var grid = '';
+    for (var t = 0; t <= 3; t++) {
+      var vy = max - span * t / 3, yy = yOf(vy);
+      grid += '<line x1="' + L + '" y1="' + yy.toFixed(1) + '" x2="' + (W - R) + '" y2="' + yy.toFixed(1) + '" stroke="rgba(255,255,255,.10)" stroke-width="0.6" stroke-dasharray="2 2"/>';
+      grid += '<text x="' + (L - 3) + '" y="' + (yy + 2.5).toFixed(1) + '" text-anchor="end" font-size="8" fill="rgba(255,255,255,.45)">¥' + Number(vy).toFixed(2) + '</text>';
+    }
+    var line = pts.map(function (p, i) { return xOf(i).toFixed(1) + ',' + yOf(p.v).toFixed(1); }).join(' ');
+    var area = line + ' ' + xOf(pts.length - 1).toFixed(1) + ',' + (T + ih) + ' ' + xOf(0).toFixed(1) + ',' + (T + ih);
+    var n = pts.length, ticksN = Math.min(4, n), seen = {}, xa = '';
+    for (var k = 0; k < ticksN; k++) {
+      var i = ticksN === 1 ? 0 : Math.round(k * (n - 1) / (ticksN - 1));
+      var lab = pts[i].label;
+      if (seen[lab]) continue;
+      seen[lab] = 1;
+      var anchor = (k === 0) ? 'start' : (k === ticksN - 1 ? 'end' : 'middle');
+      xa += '<text x="' + xOf(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + anchor + '" font-size="8" fill="rgba(255,255,255,.45)">' + lab + '</text>';
+    }
+    var axis = '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.18)" stroke-width="0.6"/>' +
+               '<line x1="' + L + '" y1="' + (T + ih) + '" x2="' + (W - R) + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.18)" stroke-width="0.6"/>';
+    var dots = pts.length > 1 ? '' : '<circle cx="' + xOf(0).toFixed(1) + '" cy="' + yOf(pts[0].v).toFixed(1) + '" r="1.6" fill="var(--kimi-color-accent)"/>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + grid + axis +
+      '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 12%, transparent)"/>' +
+      '<polyline points="' + line + '" fill="none" stroke="var(--kimi-color-accent)" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>' +
+      dots + xa + '</svg>';
+  }
+  function paintCharts(d) {
+    var hour = document.getElementById('chart-hour'), day = document.getElementById('chart-day');
+    if (!hour || !day) return;
+    if (!d || d.ok === false) { hour.innerHTML = ''; day.innerHTML = ''; return; }
+    var charts = d.charts || {};
+    var oneHour = charts['hour'];
+    if (!oneHour || !oneHour.points || !oneHour.points.length) {
+      oneHour = { kind: 'usage', points: [] };
+    }
+    oneHour.kind = 'usage';
+    var hourCap = document.getElementById('chart-hour-cap');
+    if (hourCap) hourCap.textContent = '最近 ' + (oneHour.points ? oneHour.points.length : 0) + ' 次采样消耗';
+    var daily = charts['14d'] || { kind: 'usage', points: (d.series || []).map(function (p) { return { label: p.date, v: p.used }; }) };
+    hour.innerHTML = chartSvg(oneHour);
+    day.innerHTML = chartSvg(daily);
+  }
+  var _render = render;
+  render = function (d) {
+    _render(d);
+    var box = document.getElementById('insight');
+    if (box) box.innerHTML = insightHtml(d);
+    paintCharts(d);
+  };
+
+  var W = window.DaimonWidget;
+  var current = (W && W.data && W.data.main) || SAMPLE;
+  render(current);
+  if (W && typeof W.onDataChange === 'function') {
+    W.onDataChange(function (data) { render((data && data.main) || SAMPLE); });
+  }
+})();
+</script>
+</body>
+</html>

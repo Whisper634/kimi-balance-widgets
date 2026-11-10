@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "widget": {
+    "widgetId": "widget_5f949127-3776-415a-beb3-f6f7aa341823",
+    "title": "Kimi 加油包",
+    "description": "Kimi 加油包（booster wallet）额度看板：余额、已用比例、本周期消费、日均扣费与还能撑几天。",
+    "kind": "regular",
+    "capabilities": [],
+    "type": "html",
+    "faces": {},
+    "slots": {
+      "main": {
+        "kind": "json",
+        "schema": {
+          "properties": {
+            "currency": {
+              "type": "string"
+            },
+            "detail": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "ok": {
+              "type": "boolean"
+            },
+            "total": {
+              "type": "number"
+            },
+            "updatedAt": {
+              "type": "string"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "warn",
+                "alert"
+              ]
+            },
+            "hint": {
+              "type": "string"
+            },
+            "burnPerDay": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "daysLeft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "exhaustAt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "windowDays": {
+              "type": "number"
+            },
+            "samples": {
+              "type": "number"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "date",
+                  "used"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "used": {
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            "charts": {
+              "type": "object",
+              "properties": {
+                "1h": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "v": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "24h": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "v": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "14d": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "v": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "30d": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "points": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "v": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "peakShare": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "status": {
+              "type": "string"
+            },
+            "left": {
+              "type": "number"
+            },
+            "used": {
+              "type": "number"
+            },
+            "usedPct": {
+              "type": "number"
+            },
+            "remainPct": {
+              "type": "number"
+            },
+            "monthlyUsed": {
+              "type": "number"
+            },
+            "topupLimit": {
+              "type": "number"
+            },
+            "cycleStart": {
+              "type": "string"
+            },
+            "cycleEnd": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "latestData": {
+      "main": {
+        "ok": true,
+        "status": "STATUS_ACTIVE",
+        "currency": "CNY",
+        "left": 25.0,
+        "total": 200.0,
+        "used": 175.0,
+        "usedPct": 87.5,
+        "remainPct": 12.5,
+        "monthlyUsed": 0.0,
+        "topupLimit": 2975.0,
+        "cycleStart": "2026-10-18T06:54:10Z",
+        "cycleEnd": "2026-11-18T06:54:10Z",
+        "level": "ok",
+        "burnPerDay": null,
+        "daysLeft": null,
+        "samples": 0,
+        "series": [],
+        "charts": {},
+        "updatedAt": "sample",
+        "hint": "余额 ¥25.00（已用 87.5%）· 近 7 天没观测到扣费 · 11-18 重置周期"
+      }
+    },
+    "status": "idle",
+    "lastRun": null,
+    "bindings": {},
+    "createdAt": "2026-10-22T01:35:55.183Z",
+    "updatedAt": "2026-10-22T01:37:18.066Z"
+  }
+}

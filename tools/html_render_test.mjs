@@ -130,6 +130,26 @@ ok('先烧谁有徽标', els.list.innerHTML.includes('先用'))
 ok('每行有折算价值', els.list.innerHTML.includes('值 ¥14.00'))
 ok('决策行用了后端 hint', els.insight.innerHTML.includes('先用 GLM-5.2'))
 
+console.log('[卡片 5] Kimi 加油包')
+els = runCard('widgets/kimi-booster/index.html', {
+  ok: true, status: 'STATUS_ACTIVE', currency: 'CNY',
+  left: 25, total: 200, used: 175, usedPct: 87.5, remainPct: 12.5, monthlyUsed: 0,
+  topupLimit: 2975, cycleStart: '2026-10-18T06:54:10Z', cycleEnd: '2026-11-18T06:54:10Z',
+  series: [{ date: '10-28', used: 0 }, { date: '10-29', used: 2.5 }],
+  charts: {
+    'hour': { kind: 'usage', unit: 'money', points: [{ label: '17:00', v: 0 }, { label: '17:30', v: 2.5 }] },
+    '14d': { kind: 'usage', unit: 'money', points: [{ label: '10-28', v: 0 }, { label: '10-29', v: 2.5 }] },
+  },
+  level: 'warn', burnPerDay: 2.5, daysLeft: 10, exhaustAt: '2026-11-10T00:00:00+00:00',
+  windowDays: 7, samples: 6, hint: '余额 ¥25.00（已用 87.5%）· 日均 ¥2.50 · 还能撑 10 天',
+})
+ok('加油包余额渲染 ¥25.00', els.body.innerHTML.includes('25.00'))
+ok('已用比例渲染 87.5%', els.body.innerHTML.includes('87.5%'))
+ok('加油包总额渲染 ¥200.00', els.body.innerHTML.includes('200.00'))
+ok('决策行用了后端 hint', els.insight.innerHTML.includes('还能撑 10 天'))
+ok('决策行按级别带 class', els.insight.innerHTML.includes('insight warn'))
+ok('加油包卡也有双图', els['chart-hour'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('<svg'))
+
 console.log('')
 if (fails) {
   console.log(`失败 ${fails} 项`)
