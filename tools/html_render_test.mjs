@@ -69,8 +69,7 @@ let els = runCard('widgets/deepseek-balance/index.html', {
 ok('余额渲染出来了', els.body.innerHTML.includes('96.50'))
 ok('决策行有日均与天数', els.insight.innerHTML.includes('日均') && els.insight.innerHTML.includes('天'))
 ok('决策行按级别带 class', els.insight.innerHTML.includes('insight ok'))
-ok('左图（消耗量）渲染出来了', els['chart-hour'].innerHTML.includes('<svg') && els['chart-hour'].innerHTML.includes('%'))
-ok('右图（每日）渲染出来了', els['chart-day'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('10-28'))
+ok('折线图渲染出来了', els['chart'].innerHTML.includes('<svg') && els['chart'].innerHTML.includes('峰值'))
 ok('大字号已生效', fs.readFileSync(path.join(REPO, 'widgets/deepseek-balance/index.html'), 'utf8').includes('font-size: 48px'))
 
 console.log('[卡片 2] Kimi API 余额（告急态）')
@@ -88,7 +87,7 @@ els = runCard('widgets/kimi-api-balance/index.html', {
 ok('总额渲染出来了', els.body.innerHTML.includes('60.94'))
 ok('告急态渲染 ⚠️', els.insight.innerHTML.includes('⚠️'))
 ok('告急态 class 正确', els.insight.innerHTML.includes('insight alert'))
-ok('Kimi API 卡也有双图', els['chart-hour'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('<svg'))
+ok('Kimi API 卡也有折线图', els['chart'].innerHTML.includes('<svg'))
 
 console.log('[卡片 3] Kimi 订阅用量（活不过重置）')
 els = runCard('widgets/kimi-subscription-usage/index.html', {
@@ -110,7 +109,7 @@ ok('决策行有距重置天数', els.insight.innerHTML.includes('距重置 26')
 ok('加油包余额渲染 ¥25.00', els.body.innerHTML.includes('25.00'))
 ok('加油包总额渲染 ¥200.00', els.body.innerHTML.includes('200.00'))
 ok('决策行带加油包兜底', els.insight.innerHTML.includes('加油包 ¥25.00'))
-ok('订阅卡 Y 轴是百分比单位', els['chart-day'].innerHTML.includes('%') && els['chart-hour'].innerHTML.includes('%'))
+ok('订阅卡折线图渲染出来了', els['chart'].innerHTML.includes('<svg'))
 
 console.log('[卡片 4] 火山免费额度（价值排序）')
 els = runCard('widgets/volc-engine-quota/index.html', {
@@ -133,13 +132,9 @@ ok('决策行用了后端 hint', els.insight.innerHTML.includes('先用 GLM-5.2'
 console.log('[卡片 5] Kimi 加油包')
 els = runCard('widgets/kimi-booster/index.html', {
   ok: true, status: 'STATUS_ACTIVE', currency: 'CNY',
-  left: 25, total: 200, used: 175, usedPct: 87.5, remainPct: 12.5, monthlyUsed: 0,
+  left: 25, total: 200, used: 175, usedPct: 87.5, monthlyUsed: 0,
   topupLimit: 2975, cycleStart: '2026-10-18T06:54:10Z', cycleEnd: '2026-11-18T06:54:10Z',
   series: [{ date: '10-28', used: 0 }, { date: '10-29', used: 2.5 }],
-  charts: {
-    'hour': { kind: 'usage', unit: 'money', points: [{ label: '17:00', v: 0 }, { label: '17:30', v: 2.5 }] },
-    '14d': { kind: 'usage', unit: 'money', points: [{ label: '10-28', v: 0 }, { label: '10-29', v: 2.5 }] },
-  },
   level: 'warn', burnPerDay: 2.5, daysLeft: 10, exhaustAt: '2026-11-10T00:00:00+00:00',
   windowDays: 7, samples: 6, hint: '余额 ¥25.00（已用 87.5%）· 日均 ¥2.50 · 还能撑 10 天',
 })
@@ -148,7 +143,7 @@ ok('已用比例渲染 87.5%', els.body.innerHTML.includes('87.5%'))
 ok('加油包总额渲染 ¥200.00', els.body.innerHTML.includes('200.00'))
 ok('决策行用了后端 hint', els.insight.innerHTML.includes('还能撑 10 天'))
 ok('决策行按级别带 class', els.insight.innerHTML.includes('insight warn'))
-ok('加油包卡也有双图', els['chart-hour'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('<svg'))
+ok('加油包卡有折线图', els['chart'].innerHTML.includes('<svg'))
 
 console.log('')
 if (fails) {

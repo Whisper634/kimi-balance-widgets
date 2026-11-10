@@ -8,7 +8,7 @@
   :root { font-family: var(--kimi-font-sans); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   button, input, select, textarea { font: inherit; }
-  .wrap { padding: 20px 18px 18px; width: 100%; }
+  .wrap { padding-block-start: var(--kimi-space-4); padding-inline: var(--kimi-space-4); padding-block-end: var(--kimi-space-4); width: 100%; }
   .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
   .head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--kimi-space-3); margin-block-end: var(--kimi-space-2); }
@@ -31,10 +31,7 @@
   .err .d { font-size: 13px; color: var(--kimi-color-text-secondary); }
   .dot { width: 8px; height: 8px; border-radius: var(--kimi-radius-full); background: var(--kimi-color-warning); flex: none; }
   .chart { margin-block-start: var(--kimi-space-3); }
-    .charts { display: flex; gap: 10px; margin-block-start: var(--kimi-space-3); }
-  .charts > .chart-box { flex: 1; min-width: 0; }
-  .charts svg { display: block; width: 100%; height: auto; max-height: 150px; }
-  .chart-cap { font-size: 10.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 2px; }
+  .chart svg { display: block; width: 100%; height: 54px; }
   .chart-meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--kimi-color-text-tertiary); margin-block-start: 4px; }
   .chart-empty { margin-block-start: var(--kimi-space-3); font-size: 12px; color: var(--kimi-color-text-tertiary); }
   .insight { margin-block-start: var(--kimi-space-3); padding: var(--kimi-space-2) var(--kimi-space-3); border-radius: var(--kimi-radius-panel); background: color-mix(in srgb, var(--kimi-color-text-tertiary) 10%, transparent); font-size: 12.5px; line-height: 1.45; color: var(--kimi-color-text-secondary); }
@@ -51,10 +48,7 @@
   </div>
   <div id="body">正在读取余额…</div>
   <div id="insight"></div>
-  <div class="charts">
-    <div class="chart-box"><div id="chart-hour"></div><div class="chart-cap" id="chart-hour-cap">近 1 小时</div></div>
-    <div class="chart-box"><div id="chart-day"></div><div class="chart-cap">近 14 天每日</div></div>
-  </div>
+  <div id="chart"></div>
 </div>
 
 <script>
@@ -115,74 +109,36 @@
   function fmtUsed(n) {
     return '¥' + Number(n).toFixed(2);
   }
-  // 折线：网格 + Y 轴刻度 + X 轴日期；线细、留白足
-  // 左：近 1 小时（数值曲线）；右：近 14 天（每日消耗）
-  function chartSvg(series, unit) {
-    var pts = (series && series.points) || [];
-    if (!pts.length) return '<div class="chart-empty">暂无采样</div>';
-    var isValue = series.kind === 'value';
-    var W = 210, H = 132, L = 32, R = 8, T = 10, B = 22;
-    var iw = W - L - R, ih = H - T - B;
-    var vals = pts.map(function (p) { return Number(p.v); });
-    var max = Math.max.apply(null, vals), min = Math.min.apply(null, vals);
-    if (isValue) { var pv = (max - min) * 0.15 || 0.01; min -= pv; max += pv; }
-    else { max = max || 1; min = 0; }
-    var span = (max - min) || 1;
-    function xOf(i) { return L + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw); }
-    function yOf(v) { return T + (1 - (v - min) / span) * ih; }
-    var grid = '';
-    for (var t = 0; t <= 3; t++) {
-      var vy = max - span * t / 3, yy = yOf(vy);
-      grid += '<line x1="' + L + '" y1="' + yy.toFixed(1) + '" x2="' + (W - R) + '" y2="' + yy.toFixed(1) + '" stroke="rgba(255,255,255,.10)" stroke-width="0.6" stroke-dasharray="2 2"/>';
-      grid += '<text x="' + (L - 3) + '" y="' + (yy + 2.5).toFixed(1) + '" text-anchor="end" font-size="8" fill="rgba(255,255,255,.45)">' + ('¥' + Number(vy).toFixed(2)) + '</text>';
-    }
-    var line = pts.map(function (p, i) { return xOf(i).toFixed(1) + ',' + yOf(p.v).toFixed(1); }).join(' ');
-    var area = line + ' ' + xOf(pts.length - 1).toFixed(1) + ',' + (T + ih) + ' ' + xOf(0).toFixed(1) + ',' + (T + ih);
-    var n = pts.length, ticksN = Math.min(4, n), seen = {}, xa = '';
-    for (var k = 0; k < ticksN; k++) {
-      var i = ticksN === 1 ? 0 : Math.round(k * (n - 1) / (ticksN - 1));
-      var lab = pts[i].label;
-      if (seen[lab]) continue;
-      seen[lab] = 1;
-      var anchor = (k === 0) ? 'start' : (k === ticksN - 1 ? 'end' : 'middle');
-      xa += '<text x="' + xOf(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + anchor + '" font-size="8" fill="rgba(255,255,255,.45)">' + lab + '</text>';
-    }
-    var axis = '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.18)" stroke-width="0.6"/>' +
-               '<line x1="' + L + '" y1="' + (T + ih) + '" x2="' + (W - R) + '" y2="' + (T + ih) + '" stroke="rgba(255,255,255,.18)" stroke-width="0.6"/>';
-    var dots = pts.length > 1 ? '' : '<circle cx="' + xOf(0).toFixed(1) + '" cy="' + yOf(pts[0].v).toFixed(1) + '" r="1.6" fill="var(--kimi-color-accent)"/>';
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + grid + axis +
-      '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 12%, transparent)"/>' +
-      '<polyline points="' + line + '" fill="none" stroke="var(--kimi-color-accent)" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round"/>' +
-      dots + xa + '</svg>';
+  function spark(series) {
+    if (!series || !series.length) return '';
+    var max = Math.max.apply(null, series.map(function (p) { return p.used; }));
+    if (!(max > 0)) return '<div class="chart-empty">近 14 天没有观测到消耗</div>';
+    var w = 100, h = 34, pad = 2;
+    var step = series.length > 1 ? (w - pad * 2) / (series.length - 1) : 0;
+    var line = series.map(function (p, i) {
+      var x = pad + i * step, y = h - pad - (p.used / max) * (h - pad * 2);
+      return x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ');
+    var area = line + ' ' + (pad + (series.length - 1) * step).toFixed(2) + ',' + (h - pad) + ' ' + pad + ',' + (h - pad);
+    var dots = series.map(function (p, i) {
+      if (!p.used) return '';
+      var x = pad + i * step, y = h - pad - (p.used / max) * (h - pad * 2);
+      return '<circle cx="' + x.toFixed(2) + '" cy="' + y.toFixed(2) + '" r="1.1" fill="var(--kimi-color-accent)"><title>' +
+        p.date + '：' + fmtUsed(p.used) + '</title></circle>';
+    }).join('');
+    return '<div class="chart"><svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+      '<polygon points="' + area + '" fill="color-mix(in srgb, var(--kimi-color-accent) 16%, transparent)"/>' +
+      '<polyline points="' + line + '" fill="none" stroke="var(--kimi-color-accent)" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>' +
+      dots + '</svg><div class="chart-meta"><span>近 14 天每日消耗</span><span>峰值 ' + fmtUsed(max) + '</span></div></div>';
   }
-  function paintCharts(d) {
-    var hour = document.getElementById('chart-hour'), day = document.getElementById('chart-day');
-    if (!hour || !day) return;
-    if (!d || d.ok === false) { hour.innerHTML = ''; day.innerHTML = ''; return; }
-    var charts = d.charts || {};
-    var oneHour = charts['hour'];
-    if (!oneHour || !oneHour.points || !oneHour.points.length) {
-      var src = (charts['24h'] && charts['24h'].points) || (charts['1h'] && charts['1h'].points) || [];
-      var dl = [];
-      for (var i = 1; i < src.length; i++) {
-        var dv = src[i - 1].v - src[i].v;
-        dl.push({ label: src[i].label, v: dv > 0 ? dv : 0 });
-      }
-      oneHour = { kind: 'usage', points: dl.slice(-8) };
-    }
-    oneHour.kind = 'usage';
-    var hourCap = document.getElementById('chart-hour-cap');
-    if (hourCap) hourCap.textContent = '最近 ' + (oneHour.points ? oneHour.points.length : 0) + ' 次采样消耗';
-    var daily = charts['14d'] || { kind: 'usage', points: (d.series || []).map(function (p) { return { label: p.date, v: p.used }; }) };
-    hour.innerHTML = chartSvg(oneHour);
-    day.innerHTML = chartSvg(daily);
-  }
+
   var _render = render;
   render = function (d) {
     _render(d);
     var box = document.getElementById('insight');
     if (box) box.innerHTML = insightHtml(d);
-    paintCharts(d);
+    var cb = document.getElementById('chart');
+    if (cb) cb.innerHTML = (d && d.ok !== false) ? spark(d.series) : '';
   };
 
   var W = window.DaimonWidget;
