@@ -22,7 +22,7 @@ BASE = "https://www.kimi.com"
 ASSETS = os.path.dirname(os.path.abspath(__file__))
 
 
-def derived(remaining_pct, reset_at, assets_dir):
+def derived(remaining_pct, reset_at, assets_dir, booster_left=None):
     """订阅额度的记账/外推：剩余百分比 → 日均消耗几个点 → 还能撑几天 → 是否会在重置前打光。"""
     th = insights.load_thresholds(assets_dir)
     points = insights.record_value(os.path.join(assets_dir, "history.json"), remaining_pct)
@@ -37,6 +37,9 @@ def derived(remaining_pct, reset_at, assets_dir):
     reset_days = insights.days_between(insights.now_utc(), reset_at)
     reset_days = reset_days if reset_days > 0 else None
 
+    boost = float(booster_left) if booster_left not in (None, "") and float(booster_left) > 0 else 0.0
+    boost_note = ("；订阅打光后还有加油包 ¥%.2f 兜底" % boost) if boost else ""
+
     level = insights.level_for_ratio(remaining_pct, th["quotaWarnPct"], th["quotaAlertPct"])
     if days is not None and reset_days is not None and days < reset_days:
         level = insights.worst(level, "alert")
@@ -49,10 +52,10 @@ def derived(remaining_pct, reset_at, assets_dir):
         if days is None:
             hint = base + "，还在攒样本"
         elif days <= 0:
-            hint = "额度已打光"
+            hint = "额度已打光" + boost_note
         elif reset_days is not None and days < reset_days:
-            hint = "%s，约 %s 打光 —— 距重置还有 %d 天，撑不到重置" % (
-                base, insights.date_label(exhaust_at), int(round(reset_days)))
+            hint = "%s，约 %s 打光 —— 距重置还有 %d 天，撑不到重置%s" % (
+                base, insights.date_label(exhaust_at), int(round(reset_days)), boost_note)
         elif reset_days is not None:
             hint = "%s，够用到 %s 重置（还有 %d 天）" % (
                 base, insights.date_label(reset_at), int(round(reset_days)))
@@ -70,6 +73,7 @@ def derived(remaining_pct, reset_at, assets_dir):
         "daysToReset": (int(round(reset_days)) if reset_days is not None else None),
         "exhaustAt": exhaust_at,
         "windowDays": int(th["windowDays"]),
+        "boostNote": boost_note.lstrip("；") if boost_note else None,
         "samples": len(points),
         "series": insights.daily_usage(points, 14),
         "charts": {
@@ -176,5 +180,5 @@ def run(ctx):
         "boostMonthlyUsed": boost_used,
         "updatedAt": datetime.now(timezone.utc).isoformat(),
     }
-    artifact.update(derived(remaining_pct, artifact["resetAt"], ASSETS))
+    artifact.update(derived(remaining_pct, artifact["resetAt"], ASSETS, boost_left))
     return {"artifact": artifact}

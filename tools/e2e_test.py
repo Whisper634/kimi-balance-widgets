@@ -97,7 +97,7 @@ def main():
         mod.ASSETS = td
         open(os.path.join(td, "kimi_refresh.txt"), "w").write("rt-fake\n")
         seed(5, 100.0, td)          # 5 天前剩余 100%
-        reset_at = (datetime.now(timezone.utc) + timedelta(days=26)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        reset_at = (datetime.now(timezone.utc) + timedelta(days=25)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         def fake_urlopen(req, timeout=30):
             url = req.full_url
@@ -109,7 +109,8 @@ def main():
         mod.urllib.request.urlopen = fake_urlopen
         mod.post_rpc = lambda path, token: (
             {"subscriptionBalance": {"amountUsedRatio": 0.425, "kimiCodeUsedRatio": 0, "expireTime": reset_at},
-             "boosterWallets": []}
+             "boosterWallets": [{"moneyLeft": {"priceInCents": "2500"}, "moneyTotal": {"priceInCents": "20000"},
+                                 "monthlyUsed": {"priceInCents": "0"}}]}
             if "GetSubscriptionStats" in path
             else {"subscription": {"active": True, "currentEndTime": "2027-07-18T00:00:00Z", "goods": {"title": "Allegretto"}}}
         )
@@ -117,9 +118,11 @@ def main():
         check("剩余百分比 57.5", art["remainingPct"] == 57.5, art.get("remainingPct"))
         check("日均百分比≈8.5", art["burnPerDay"] is not None and 7.5 <= art["burnPerDay"] <= 9.5, art.get("burnPerDay"))
         check("剩余天数≈6.8", art["daysLeft"] is not None and 6 <= art["daysLeft"] <= 8, art.get("daysLeft"))
-        check("距重置≈26 天", art["daysToReset"] is not None and 25 <= art["daysToReset"] <= 27, art.get("daysToReset"))
+        check("距重置≈25 天", art["daysToReset"] is not None and 24 <= art["daysToReset"] <= 26, art.get("daysToReset"))
         check("判 alert（撑不到重置）", art["level"] == "alert", art.get("level"))
         check("hint 点明撑不到重置", "撑不到重置" in art["hint"], art.get("hint"))
+        check("加油包余额 ¥25", art["boostLeft"] == 25.0, art.get("boostLeft"))
+        check("hint 提到加油包兜底", "加油包 ¥25.00" in art["hint"], art.get("hint"))
 
     print("[4] 火山额度：按单价折算剩余价值并排优先级")
     mod = load("widgets/volc-engine-quota/automation/volc_quota_run.py", "volc_mod")

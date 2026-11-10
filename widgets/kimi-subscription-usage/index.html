@@ -133,6 +133,7 @@
       parts.push('还能撑 <b>' + (d.daysLeft > 999 ? '999+' : Math.max(0, Math.round(d.daysLeft))) + ' 天</b>');
       if (d.exhaustAt) parts.push('约 ' + md(d.exhaustAt) + ' 打光');
       if (d.daysToReset != null) parts.push('<b>撑不到重置</b>');
+      if (d.boostLeft != null && Number(d.boostLeft) > 0) parts.push('打光后还有<b>加油包 ¥' + Number(d.boostLeft).toFixed(2) + '</b>兜底');
     }
     if (d.daysToReset != null) parts.push('距重置 ' + d.daysToReset + ' 天');
     if (!d.burnPerDay) parts.push(d.samples > 1 ? '近 ' + (d.windowDays || 7) + ' 天没消耗' : '攒历史中，下次刷新出结论');

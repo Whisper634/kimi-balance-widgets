@@ -69,7 +69,7 @@ let els = runCard('widgets/deepseek-balance/index.html', {
 ok('余额渲染出来了', els.body.innerHTML.includes('96.50'))
 ok('决策行有日均与天数', els.insight.innerHTML.includes('日均') && els.insight.innerHTML.includes('天'))
 ok('决策行按级别带 class', els.insight.innerHTML.includes('insight ok'))
-ok('左图（1 小时）渲染出来了', els['chart-hour'].innerHTML.includes('<svg') && els['chart-hour'].innerHTML.includes('17:00'))
+ok('左图（消耗量）渲染出来了', els['chart-hour'].innerHTML.includes('<svg') && els['chart-hour'].innerHTML.includes('%'))
 ok('右图（每日）渲染出来了', els['chart-day'].innerHTML.includes('<svg') && els['chart-day'].innerHTML.includes('10-28'))
 ok('大字号已生效', fs.readFileSync(path.join(REPO, 'widgets/deepseek-balance/index.html'), 'utf8').includes('font-size: 48px'))
 
@@ -94,19 +94,23 @@ console.log('[卡片 3] Kimi 订阅用量（活不过重置）')
 els = runCard('widgets/kimi-subscription-usage/index.html', {
   ok: true, active: true, plan: 'Allegretto', totalPct: 42.5, remainingPct: 57.5, codePct: 0,
   resetAt: '2026-11-17T09:10:55Z', subEnd: '2027-07-18T00:00:00Z',
-  boostLeft: 0, boostTotal: 175, boostMonthlyUsed: 0,
+  boostLeft: 25, boostTotal: 200, boostMonthlyUsed: 0,
   series: [{ date: '10-28', used: 3.1 }, { date: '10-29', used: 6.0 }],
   charts: {
     '1h': { kind: 'value', unit: 'pct', points: [{ label: '17:00', v: 52.8 }, { label: '17:30', v: 52.6 }] },
     '14d': { kind: 'usage', unit: 'pct', points: [{ label: '10-28', v: 3.1 }, { label: '10-29', v: 6.0 }] },
   },
   level: 'alert', burnPerDay: 8.5, daysLeft: 4.9, daysToReset: 26,
-  exhaustAt: '2026-10-29T00:00:00+00:00', windowDays: 7, samples: 30, hint: '撑不到重置',
+  exhaustAt: '2026-10-29T00:00:00+00:00', windowDays: 7, samples: 30,
+  hint: '撑不到重置；订阅打光后还有加油包 ¥25.00 兜底',
 })
 ok('用量渲染出来了', els.body.innerHTML.includes('42.5%'))
 ok('决策行给出撑不到重置', els.insight.innerHTML.includes('撑不到重置'))
 ok('决策行有距重置天数', els.insight.innerHTML.includes('距重置 26'))
-ok('订阅卡 Y 轴带"点"单位', els['chart-day'].innerHTML.includes('点') || els['chart-hour'].innerHTML.includes('点'))
+ok('加油包余额渲染 ¥25.00', els.body.innerHTML.includes('25.00'))
+ok('加油包总额渲染 ¥200.00', els.body.innerHTML.includes('200.00'))
+ok('决策行带加油包兜底', els.insight.innerHTML.includes('加油包 ¥25.00'))
+ok('订阅卡 Y 轴是百分比单位', els['chart-day'].innerHTML.includes('%') && els['chart-hour'].innerHTML.includes('%'))
 
 console.log('[卡片 4] 火山免费额度（价值排序）')
 els = runCard('widgets/volc-engine-quota/index.html', {
